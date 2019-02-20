@@ -3,6 +3,7 @@ package com.gemsrobotics.util.joy;
 import java.util.function.Supplier;
 
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.buttons.Button;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.command.Command;
 
@@ -154,5 +155,19 @@ public final class Gembutton extends JoystickButton {
 
 	public void whileHeld(final Runnable action) {
 		super.whileHeld(commandOf(action));
+	}
+
+	public void setToggle(final Runnable toggle1, final Runnable toggle2) {
+		final boolean[] val = { false };
+
+		whenPressed(() -> {
+			if (val[0]) {
+				toggle1.run();
+			} else {
+				toggle2.run();
+			}
+
+			val[0] = !val[0];
+		});
 	}
 }

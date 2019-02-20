@@ -2,14 +2,22 @@
   <dictionary name="ejmal">
     <words>
       <w>ahrs</w>
+      <w>intaking</w>
       <w>jevois</w>
+      <w>leds</w>
       <w>lvuser</w>
       <w>mult</w>
+      <w>odometry</w>
       <w>pidf</w>
+      <w>pidfva</w>
       <w>quickstop</w>
+      <w>quickturn</w>
       <w>setpoint</w>
       <w>teleop</w>
+      <w>toggler</w>
       <w>toml</w>
+      <w>trajs</w>
+      <w>vals</w>
       <w>vois</w>
     </words>
   </dictionary>

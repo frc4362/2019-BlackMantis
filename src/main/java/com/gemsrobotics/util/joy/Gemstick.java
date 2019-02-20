@@ -84,6 +84,18 @@ public final class Gemstick extends Joystick {
 				throw new RuntimeException("Invalid POVState state!");
 			}
 		}
+
+		public static POVState ofDegrees(final int degrees) {
+			return degrees == -1 ? NONE : of(degrees / 45);
+		}
+
+		public int toDegrees() {
+			if (m_val == -1) {
+				return -1;
+			} else {
+				return m_val * 45;
+			}
+		}
 	}
 
 	/**
@@ -286,13 +298,7 @@ public final class Gemstick extends Joystick {
 	 * @return The POV state with a non-360 degree value3
 	 */
 	public POVState getPOVState() {
-		final int s = super.getPOV();
-		
-		if (s == -1) {
-			return POVState.NONE;
-		} else {
-			return POVState.of(s / 45);
-		}
+		return POVState.ofDegrees(super.getPOV());
 	}
 
 	public HIDType getType() {

@@ -1,6 +1,6 @@
-stage1Port = 6
-stage2Port = [7, 8]
+stage1Port = 7
+stage2Port = [6, 8]
 
-extenderPort = [2, 3]
-placementPort = [4, 5]
-longPlacePort = [6, 7]
+extenderPort = 3
+placementPort = 1
+longPlacePort = 0

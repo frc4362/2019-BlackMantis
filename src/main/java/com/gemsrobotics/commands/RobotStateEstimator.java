@@ -1,12 +1,11 @@
 package com.gemsrobotics.commands;
 
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
+import com.gemsrobotics.subsystems.drive.DifferentialDrive.Side;
 import com.gemsrobotics.util.motion.Rotation;
 import com.gemsrobotics.util.motion.Twist;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
-
-import java.util.function.Supplier;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class RobotStateEstimator extends Command {
@@ -15,41 +14,36 @@ public final class RobotStateEstimator extends Command {
 	private double m_encoderPrevDistanceLeft;
 	private double m_encoderPrevDistanceRight;
 
-	private DifferentialDrive m_chassis;
-	private Supplier<Double> m_angleSupplier;
+	private DifferentialDrive m_vehicle;
 
-	public RobotStateEstimator(
-			final DifferentialDrive driveTrain,
-			final Supplier<Double> angleSupplier
-	) {
+	public RobotStateEstimator(final DifferentialDrive vehicle) {
 		m_encoderPrevDistanceLeft = 0.0;
 		m_encoderPrevDistanceRight = 0.0;
 
-		m_chassis = driveTrain;
-		m_angleSupplier = angleSupplier;
+		m_vehicle = vehicle;
 	}
 
 	@Override
 	public void initialize() {
-		m_encoderPrevDistanceLeft = m_chassis.getInchesPosition(DifferentialDrive.Side.LEFT);
-		m_encoderPrevDistanceRight = m_chassis.getInchesPosition(DifferentialDrive.Side.RIGHT);
+		m_encoderPrevDistanceLeft = m_vehicle.getInchesPosition(Side.LEFT);
+		m_encoderPrevDistanceRight = m_vehicle.getInchesPosition(Side.RIGHT);
 	}
 
 	@Override
 	public void execute() {
-		final double distanceLeft = m_chassis.getInchesPosition(DifferentialDrive.Side.LEFT),
-				distanceRight = m_chassis.getInchesPosition(DifferentialDrive.Side.RIGHT);
+		final double distanceLeft = m_vehicle.getInchesPosition(Side.LEFT),
+				distanceRight = m_vehicle.getInchesPosition(Side.RIGHT);
 
-		final Rotation angle = Rotation.fromDegrees(m_angleSupplier.get());
-		final Twist velocityMeasured = m_chassis.getState().generateOdometry(
+		final Rotation angle = Rotation.fromDegrees(m_vehicle.getAHRS().getAngle());
+		final Twist velocityMeasured = m_vehicle.getState().generateOdometry(
 				distanceLeft - m_encoderPrevDistanceLeft,
 				distanceRight - m_encoderPrevDistanceRight,
 				angle);
-		final Twist velocityPredicted = m_chassis.getKinematics().forwardKinematics(
-				m_chassis.getInchesPerSecond(DifferentialDrive.Side.LEFT) * dt,
-				m_chassis.getInchesPerSecond(DifferentialDrive.Side.RIGHT) * dt);
+		final Twist velocityPredicted = m_vehicle.getKinematics().forwardKinematics(
+				m_vehicle.getInchesPerSecond(Side.LEFT) * dt,
+				m_vehicle.getInchesPerSecond(Side.RIGHT) * dt);
 
-		m_chassis.getState().addObservations(
+		m_vehicle.getState().addObservations(
 				Timer.getFPGATimestamp(),
 				velocityMeasured,
 				velocityPredicted);

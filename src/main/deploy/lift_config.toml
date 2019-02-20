@@ -1,10 +1,10 @@
 portMaster = 5
-portSlave = 6
-rotationsTop = 10.0
-rotationsBottom = -2.0
+portSlave = 9
+rotationsTop = 153.0
+rotationsBottom = 0.0
 
 [pidVars]
-kP = 0.0
+kP = 0.55
 kI = 0.0
 kD = 0.0
 kF = 0.0

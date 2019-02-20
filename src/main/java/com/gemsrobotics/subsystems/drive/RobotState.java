@@ -48,7 +48,7 @@ public final class RobotState {
 			final Twist velocityMeasured,
 			final Twist velocityPredicted
 	) {
-		final Pose integratedPose = m_chassis.getKinematics().integrateForwardKinematics(
+		final var integratedPose = m_chassis.getKinematics().integrateForwardKinematics(
 				getLatestFieldToVehicle().getValue(),
 				velocityMeasured);
 

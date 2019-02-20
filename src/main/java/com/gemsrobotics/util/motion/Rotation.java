@@ -2,6 +2,8 @@ package com.gemsrobotics.util.motion;
 
 import com.gemsrobotics.util.Utils;
 
+import static com.gemsrobotics.util.motion.EpsilonValue.Epsilon;
+
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class Rotation {
 	protected double m_cosAngle, m_sinAngle;
@@ -42,7 +44,7 @@ public class Rotation {
 	public void normalize() {
 		final double magnitude = Math.hypot(m_cosAngle, m_sinAngle);
 
-		if (magnitude > Epsilon.VALUE) {
+		if (magnitude > Epsilon) {
 			m_sinAngle /= magnitude;
 			m_cosAngle /= magnitude;
 		} else {
@@ -60,7 +62,7 @@ public class Rotation {
 	}
 
 	public double tan() {
-		if (Math.abs(m_cosAngle) < Epsilon.VALUE) {
+		if (Math.abs(m_cosAngle) < Epsilon) {
 			if (m_sinAngle >= 0.0) {
 				return Double.POSITIVE_INFINITY;
 			} else {
@@ -95,7 +97,7 @@ public class Rotation {
 	}
 
 	public boolean isParallel(final Rotation other) {
-		return Epsilon.epsilonEquals(Translation.cross(toTranslation(), other.toTranslation()), 0.0);
+		return EpsilonValue.epsilonEquals(Translation.cross(toTranslation(), other.toTranslation()), 0.0);
 	}
 
 	public Translation toTranslation() {

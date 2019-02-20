@@ -2,7 +2,8 @@ package com.gemsrobotics.util.motion;
 
 import com.gemsrobotics.util.math.Interpolate;
 
-import static com.gemsrobotics.util.motion.Epsilon.epsilonEquals;
+import static com.gemsrobotics.util.motion.EpsilonValue.Epsilon;
+import static com.gemsrobotics.util.motion.EpsilonValue.epsilonEquals;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class Pose implements Interpolate<Pose> {
@@ -33,7 +34,7 @@ public final class Pose implements Interpolate<Pose> {
 
 		final double s, c;
 
-		if (Math.abs(delta.dtheta) < Epsilon.VALUE) {
+		if (Math.abs(delta.dtheta) < Epsilon) {
 			s = 1.0 - (1.0 / 6.0 * Math.pow(delta.dtheta, 2));
 			c = delta.dtheta / 2.0;
 		} else {
@@ -42,9 +43,7 @@ public final class Pose implements Interpolate<Pose> {
 		}
 
 		return new Pose(
-				new Translation(
-						delta.dx * s - delta.dy * c,
-						delta.dx * c + delta.dy * s),
+				new Translation(delta.dx * s - delta.dy * c, delta.dx * c + delta.dy * s),
 				new Rotation(cosTheta, sinTheta, false));
 	}
 
@@ -55,7 +54,7 @@ public final class Pose implements Interpolate<Pose> {
 		final double cosMinusOne = transform.getRotation().cos();
 		final double halfThetaByTanHalfDtheta;
 
-		if (Math.abs(cosMinusOne) < Epsilon.VALUE) {
+		if (Math.abs(cosMinusOne) < Epsilon) {
 			halfThetaByTanHalfDtheta = 1.0 - (1.0 / 12.0 * Math.pow(dtheta, halfdDheta));
 		} else {
 			halfThetaByTanHalfDtheta = -(halfdDheta * transform.getRotation().sin()) / cosMinusOne;
