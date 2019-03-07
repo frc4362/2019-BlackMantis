@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class Config {
-	private static final String CONFIG_DIR = "/home/lvuser/deploy/%s.toml";
+	private static final String CONFIG_DIR = "/home/lvuser/deploy/%s_config.toml";
 
 	public static Toml getConfig(final String name) {
 		return Optional.of(name)

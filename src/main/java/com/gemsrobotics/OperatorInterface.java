@@ -7,8 +7,10 @@ import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.joy.Gembutton;
 import com.gemsrobotics.util.joy.Gemstick;
 import com.gemsrobotics.util.joy.Gemstick.POVState;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.buttons.POVButton;
+import edu.wpi.first.wpilibj.buttons.Trigger;
 
 import static com.gemsrobotics.util.command.Commands.commandOf;
 
@@ -26,9 +28,11 @@ public final class OperatorInterface {
 		m_stickRight = new Gemstick(portRight);
 		m_controller = new XboxController(portController);
 
+		final var hw = Hardware.getInstance();
+
 		final Gembutton
 				shiftDownButton = new Gembutton(m_stickLeft, 1),
-				shiftUpButton = new Gembutton(m_stickRight, 4),
+				shiftUpButton = new Gembutton(m_stickRight, 1),
 				intakeButton = new Gembutton(m_controller, 1),
 				exhaustButton = new Gembutton(m_controller, 4),
 				deployStage1Button = new Gembutton(m_controller, 3),
@@ -41,13 +45,40 @@ public final class OperatorInterface {
 				height2Button = new POVButton(m_controller, POVState.E.toDegrees()),
 				height3Button = new POVButton(m_controller, POVState.N.toDegrees());
 
-		final Runnable intakeNeutralizer = () ->
-			  Hardware.getInstance().getManipulator().setSetSpeed(RunMode.NEUTRAL);
+		final Trigger legsRetractTrigger = new Trigger() {
+			private boolean getButtons() {
+				return m_controller.getRawButton(7) && m_controller.getRawButton(8);
+			}
 
-		final var transmission = Hardware.getInstance().getChassis().getTransmission();
-		final var manipulator = Hardware.getInstance().getManipulator();
-		final var inventory = Hardware.getInstance().getInventory();
-		final var lift = Hardware.getInstance().getLift();
+			@Override
+			public boolean get() {
+				final var ds = DriverStation.getInstance();
+
+				if (ds.isFMSAttached()) {
+					final var validTime = (ds.getMatchTime() < 30) && !ds.isAutonomous();
+					return getButtons() && validTime;
+				} else {
+					return getButtons();
+				}
+			}
+		};
+
+		final Trigger ptoDeployButton = new Trigger() {
+			@Override
+			public boolean get() {
+				final var ds = DriverStation.getInstance();
+				return (!ds.isAutonomous() || ds.getMatchTime() < 30)
+						&& m_stickRight.getRawButton(7);
+			}
+		};
+
+		final Runnable intakeNeutralizer = () ->
+			  hw.getManipulator().setSetSpeed(RunMode.NEUTRAL);
+
+		final var transmission = hw.getChassis().getTransmission();
+		final var manipulator = hw.getManipulator();
+		final var inventory = hw.getInventory();
+		final var lift = hw.getLift();
 
 		shiftUpButton.whenPressed(() ->
 			  transmission.set(Gear.HIGH));
@@ -83,6 +114,11 @@ public final class OperatorInterface {
 				System.out.println("Cargo ship height attempted; but no cargo detected!");
 			}
 		}));
+
+		legsRetractTrigger.whenActive(commandOf(() ->
+			hw.getBackLegs().set(true)));
+
+		ptoDeployButton.whenActive(commandOf(hw.getPTO()::engage));
 
 		height1Button.whenPressed(commandOf(() -> {
 			switch (inventory.getCurrentPiece()) {

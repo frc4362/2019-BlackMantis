@@ -4,6 +4,7 @@ import com.gemsrobotics.util.math.Interpolate;
 
 import static com.gemsrobotics.util.motion.EpsilonValue.Epsilon;
 import static com.gemsrobotics.util.motion.EpsilonValue.epsilonEquals;
+import static java.lang.Math.*;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class Pose implements Interpolate<Pose> {
@@ -29,13 +30,13 @@ public final class Pose implements Interpolate<Pose> {
 
 	// kind of like extrapolation
 	public static Pose exp(final Twist delta) {
-		final double sinTheta = Math.sin(delta.dtheta),
-					 cosTheta = Math.cos(delta.dtheta);
+		final double sinTheta = sin(delta.dtheta),
+					 cosTheta = cos(delta.dtheta);
 
 		final double s, c;
 
-		if (Math.abs(delta.dtheta) < Epsilon) {
-			s = 1.0 - (1.0 / 6.0 * Math.pow(delta.dtheta, 2));
+		if (abs(delta.dtheta) < Epsilon) {
+			s = 1.0 - (1.0 / 6.0 * pow(delta.dtheta, 2));
 			c = delta.dtheta / 2.0;
 		} else {
 			s = sinTheta / delta.dtheta;
@@ -43,7 +44,9 @@ public final class Pose implements Interpolate<Pose> {
 		}
 
 		return new Pose(
-				new Translation(delta.dx * s - delta.dy * c, delta.dx * c + delta.dy * s),
+				new Translation(
+						delta.dx * s - delta.dy * c,
+						delta.dx * c + delta.dy * s),
 				new Rotation(cosTheta, sinTheta, false));
 	}
 
@@ -54,8 +57,8 @@ public final class Pose implements Interpolate<Pose> {
 		final double cosMinusOne = transform.getRotation().cos();
 		final double halfThetaByTanHalfDtheta;
 
-		if (Math.abs(cosMinusOne) < Epsilon) {
-			halfThetaByTanHalfDtheta = 1.0 - (1.0 / 12.0 * Math.pow(dtheta, halfdDheta));
+		if (abs(cosMinusOne) < Epsilon) {
+			halfThetaByTanHalfDtheta = 1.0 - (1.0 / 12.0 * pow(dtheta, halfdDheta));
 		} else {
 			halfThetaByTanHalfDtheta = -(halfdDheta * transform.getRotation().sin()) / cosMinusOne;
 		}
@@ -98,7 +101,7 @@ public final class Pose implements Interpolate<Pose> {
 
 		if (m_rotation.isParallel(otherRotation)) {
 			return new Translation(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-		} else if (Math.abs(m_rotation.cos()) < Math.abs(otherRotation.cos())) {
+		} else if (abs(m_rotation.cos()) < abs(otherRotation.cos())) {
 			return doIntersection(this, other);
 		} else {
 			return doIntersection(other, this);

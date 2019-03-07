@@ -1,5 +1,6 @@
 package com.gemsrobotics.util;
 
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.revrobotics.CANPIDController;
 
 public class PIDF {
@@ -11,5 +12,13 @@ public class PIDF {
 		controller.setD(kD);
 		controller.setFF(kF);
 		controller.setIZone(kIZ);
+	}
+
+	public void configure(final WPI_TalonSRX controller) {
+		controller.config_kP(0, kP);
+		controller.config_kI(0, kI);
+		controller.config_kD(0, kD);
+		controller.config_kF(0, kF);
+		controller.config_IntegralZone(0, (int) kIZ);
 	}
 }

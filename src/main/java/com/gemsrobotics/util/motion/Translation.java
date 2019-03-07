@@ -4,6 +4,7 @@ import com.gemsrobotics.util.Utils;
 
 import java.text.DecimalFormat;
 
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class Translation {
 	protected double m_x, m_y;
 

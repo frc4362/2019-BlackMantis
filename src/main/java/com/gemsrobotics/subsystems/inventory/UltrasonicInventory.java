@@ -4,6 +4,7 @@ package com.gemsrobotics.subsystems.inventory;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DigitalInput;
 
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class UltrasonicInventory extends Inventory {
 	private final AnalogInput m_panelSensor1, m_panelSensor2;
 	private final DigitalInput m_cargoSensor;

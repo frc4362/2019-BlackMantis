@@ -3,6 +3,7 @@ package com.gemsrobotics.util.motion;
 import com.gemsrobotics.util.Utils;
 
 import static com.gemsrobotics.util.motion.EpsilonValue.Epsilon;
+import static java.lang.Math.*;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class Rotation {
@@ -38,11 +39,11 @@ public class Rotation {
 	}
 
 	public static Rotation fromDegrees(final double degrees) {
-		return fromRadians(Math.toRadians(degrees));
+		return fromRadians(toRadians(degrees));
 	}
 
 	public void normalize() {
-		final double magnitude = Math.hypot(m_cosAngle, m_sinAngle);
+		final double magnitude = hypot(m_cosAngle, m_sinAngle);
 
 		if (magnitude > Epsilon) {
 			m_sinAngle /= magnitude;
@@ -74,11 +75,11 @@ public class Rotation {
 	}
 
 	public double getRadians() {
-		return Math.atan2(m_sinAngle, m_cosAngle);
+		return atan2(m_sinAngle, m_cosAngle);
 	}
 
 	public double getDegrees() {
-		return Math.toDegrees(getRadians());
+		return toDegrees(getRadians());
 	}
 
 	public Rotation rotate(final Rotation other) {

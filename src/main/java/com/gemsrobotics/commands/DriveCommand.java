@@ -7,7 +7,6 @@ import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.camera.Limelight;
 import com.gemsrobotics.util.joy.Gemstick;
 import com.gemsrobotics.util.joy.Gemstick.Lens;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import jaci.pathfinder.Pathfinder;
@@ -22,7 +21,6 @@ import static java.lang.Math.abs;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class DriveCommand extends Command {
-	private static final double MINIMUM_QUICKTURN_SPEED = 0.2;
 	private static final double kTurn = 0.01;
 	private static final double kP = 0.92;
 	private static final double
@@ -32,7 +30,6 @@ public class DriveCommand extends Command {
 
 	private final DifferentialDrive m_chassis;
 	private final Gemstick m_stick, m_wheel;
-	private final XboxController m_controller;
 	private final Limelight m_limelight;
 	private final MyAHRS m_ahrs;
 	private final SendableChooser<Boolean> m_toggler;
@@ -51,7 +48,6 @@ public class DriveCommand extends Command {
 		m_ahrs = chassis.getAHRS();
 		m_stick = oi.getStickLeft();
 		m_wheel = oi.getStickRight();
-		m_controller = oi.getController();
 		m_limelight = limelight;
 
 		m_isFollowingTrajectory = false;
@@ -87,7 +83,7 @@ public class DriveCommand extends Command {
 	}
 
 	private boolean isAttemptingVision() {
-		return m_wheel.getRawButton(1);
+		return m_wheel.getRawButton(4);
 	}
 
 	private double calculateLimelightAdjustment() {

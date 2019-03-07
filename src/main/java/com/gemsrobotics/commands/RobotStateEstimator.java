@@ -43,6 +43,9 @@ public final class RobotStateEstimator extends Command {
 				m_vehicle.getInchesPerSecond(Side.LEFT) * dt,
 				m_vehicle.getInchesPerSecond(Side.RIGHT) * dt);
 
+		System.out.println("Velocity Measured: " + velocityMeasured.toString());
+		System.out.println("Velocity Predicted: " + velocityPredicted.toString());
+
 		m_vehicle.getState().addObservations(
 				Timer.getFPGATimestamp(),
 				velocityMeasured,

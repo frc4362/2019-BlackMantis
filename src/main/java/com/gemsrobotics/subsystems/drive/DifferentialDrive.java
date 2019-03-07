@@ -54,7 +54,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	private double m_accumulator;
 	private String m_name;
 
-	private static final String[] SPARK_NAMES = {
+	private static final String[] MOTOR_CONTROLLER_NAMES = {
 		"Left Front", "Left Back", "Right Front", "Right Back"
 	};
 
@@ -130,7 +130,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	private static final double
 			LIMIT = 1.0,
 			QUICKSTOP_THRESHOLD = 0.2,
-			kTurnSens = 0.8, // used to be 1.0
+			kTurnSens = 0.2, // used to be 1.0
 			alpha = 0.1;
 
 	private static double limit(final double v) {
@@ -421,7 +421,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 
 		final List<Runnable> updaters = IntStream.range(0, 4).<Runnable>mapToObj(i -> {
 			final CANSparkMax spark = m_motors.get(i);
-			final String name = SPARK_NAMES[i];
+			final String name = MOTOR_CONTROLLER_NAMES[i];
 
 			final NetworkTableEntry
 					setSpeedEntry = builder.getEntry(name + " Setpoint"),
