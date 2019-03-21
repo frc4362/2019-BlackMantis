@@ -127,11 +127,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		}
 	}
 
-	private static final double
-			LIMIT = 1.0,
-			QUICKSTOP_THRESHOLD = 0.2,
-			kTurnSens = 0.2, // used to be 1.0
-			alpha = 0.1;
+	private static final double LIMIT = 1.0;
 
 	private static double limit(final double v) {
 		return Math.abs(v) < LIMIT ? v : LIMIT * Math.signum(v);
@@ -145,8 +141,9 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		double overPower, angularPower;
 
 		if (isQuickTurn) {
-			if (Math.abs(linearPower) < QUICKSTOP_THRESHOLD) {
-				m_accumulator = (1 - alpha) * m_accumulator + alpha * limit(zRotation) * 2;
+			if (Math.abs(linearPower) < m_localizations.quickstopThreshold) {
+				m_accumulator = (1 - m_localizations.alpha) * m_accumulator
+					+ m_localizations.alpha * limit(zRotation) * 2;
 			}
 
 			overPower = 1.0;
@@ -154,7 +151,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		} else {
 			overPower = 0.0;
 			zRotation *= -signum(linearPower);
-			angularPower = abs(linearPower) * zRotation * kTurnSens - m_accumulator;
+			angularPower = abs(linearPower) * zRotation * m_localizations.turnSensitivity - m_accumulator;
 
 			if (m_accumulator > 1) {
 				m_accumulator -= 1;
@@ -272,7 +269,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 
 	public static class Localizations {
 		public double width, length, wheelDiameter, maxVelocity,
-				maxAcceleration, maxJerk;
+				maxAcceleration, maxJerk, quickstopThreshold, turnSensitivity, alpha;
 
 		private Trajectory.Config m_config;
 

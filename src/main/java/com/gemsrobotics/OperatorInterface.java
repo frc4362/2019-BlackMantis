@@ -1,7 +1,7 @@
 package com.gemsrobotics;
 
+import com.gemsrobotics.commands.ClimberRollerListener;
 import com.gemsrobotics.subsystems.lift.Lift;
-import com.gemsrobotics.subsystems.manipulator.Manipulator.IntakeExtensionState;
 import com.gemsrobotics.subsystems.manipulator.Manipulator.RunMode;
 import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.joy.Gembutton;
@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.buttons.POVButton;
 import edu.wpi.first.wpilibj.buttons.Trigger;
+import edu.wpi.first.wpilibj.command.Scheduler;
 
 import static com.gemsrobotics.util.command.Commands.commandOf;
 
@@ -18,6 +19,7 @@ import static com.gemsrobotics.util.command.Commands.commandOf;
 public final class OperatorInterface {
 	private final Gemstick m_stickLeft, m_stickRight;
 	private final XboxController m_controller;
+	private final ClimberRollerListener m_rollerListener;
 
 	public OperatorInterface(
 			final int portLeft,
@@ -35,7 +37,7 @@ public final class OperatorInterface {
 				shiftUpButton = new Gembutton(m_stickRight, 1),
 				intakeButton = new Gembutton(m_controller, 1),
 				exhaustButton = new Gembutton(m_controller, 4),
-				deployStage1Button = new Gembutton(m_controller, 3),
+				frontLegReleaseButton = new Gembutton(m_controller, 3),
 				punchHoldButton = new Gembutton(m_controller, 5),
 				handToggler = new Gembutton(m_controller, 6);
 
@@ -45,7 +47,9 @@ public final class OperatorInterface {
 				height2Button = new POVButton(m_controller, POVState.E.toDegrees()),
 				height3Button = new POVButton(m_controller, POVState.N.toDegrees());
 
-		final Trigger legsRetractTrigger = new Trigger() {
+		m_rollerListener = new ClimberRollerListener(hw.getRollers(), m_controller);
+
+		final Trigger backLegsReleaseButton = new Trigger() {
 			private boolean getButtons() {
 				return m_controller.getRawButton(7) && m_controller.getRawButton(8);
 			}
@@ -55,7 +59,7 @@ public final class OperatorInterface {
 				final var ds = DriverStation.getInstance();
 
 				if (ds.isFMSAttached()) {
-					final var validTime = (ds.getMatchTime() < 30) && !ds.isAutonomous();
+					final var validTime = hw.getPTO().isEngaged() && !ds.isAutonomous();
 					return getButtons() && validTime;
 				} else {
 					return getButtons();
@@ -71,6 +75,37 @@ public final class OperatorInterface {
 						&& m_stickRight.getRawButton(7);
 			}
 		};
+
+		ptoDeployButton.whenActive(commandOf(() -> {
+			hw.getPTO().engage();
+			hw.getBackLegs().set(false);
+			hw.getFrontLegs().set(false);
+			hw.getManipulator().setSetSpeed(RunMode.HALTED);
+
+			if (!m_rollerListener.hasPreviouslyRun()) {
+				Scheduler.getInstance().add(m_rollerListener);
+			}
+		}));
+
+		ptoDeployButton.whenInactive(commandOf(() -> {
+			if (!backLegsReleaseButton.get()) {
+				hw.getBackLegs().set(true);
+			}
+
+			if (!frontLegReleaseButton.get()) {
+				hw.getFrontLegs().set(true);
+			}
+		}));
+
+		backLegsReleaseButton.whenActive(commandOf(() ->
+			  hw.getBackLegs().set(true)));
+
+		frontLegReleaseButton.whenPressed(commandOf(() -> {
+		  	  if (hw.getPTO().isEngaged()) {
+				  hw.getFrontLegs().set(true);
+				  hw.getPTO().disengage();
+			  }
+		}));
 
 		final Runnable intakeNeutralizer = () ->
 			  hw.getManipulator().setSetSpeed(RunMode.NEUTRAL);
@@ -93,10 +128,6 @@ public final class OperatorInterface {
 			  manipulator.setSetSpeed(RunMode.EXHAUSTING));
 		exhaustButton.whenReleased(intakeNeutralizer);
 
-		deployStage1Button.setToggle(
-				() -> manipulator.setIntake(IntakeExtensionState.DEPLOYED),
-				() -> manipulator.setIntake(IntakeExtensionState.RETRACTED));
-
 		punchHoldButton.whenPressed(() ->
 			manipulator.getLongPlacer().set(true));
 		punchHoldButton.whenReleased(() ->
@@ -106,19 +137,8 @@ public final class OperatorInterface {
 		handToggler.whenReleased(
 				() -> manipulator.getPlacer().set(false));
 
-		cargoShipHeightButton.whenPressed(commandOf(() -> {
-			if (inventory.hasCargo()) {
-				System.out.println("Cargo detected!");
-				lift.setPreset(Lift.Position.CARGO_SHIP);
-			} else {
-				System.out.println("Cargo ship height attempted; but no cargo detected!");
-			}
-		}));
-
-		legsRetractTrigger.whenActive(commandOf(() ->
-			hw.getBackLegs().set(true)));
-
-		ptoDeployButton.whenActive(commandOf(hw.getPTO()::engage));
+		cargoShipHeightButton.whenPressed(commandOf(() ->
+			lift.setPreset(Lift.Position.CARGO_SHIP)));
 
 		height1Button.whenPressed(commandOf(() -> {
 			switch (inventory.getCurrentPiece()) {
@@ -170,6 +190,10 @@ public final class OperatorInterface {
 					break;
 			}
 		}));
+	}
+
+	public void resetControls() {
+		m_rollerListener.reset();
 	}
 
 	public Gemstick getStickLeft() {

@@ -1,8 +1,9 @@
 package com.gemsrobotics;
 
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjuster;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjusterConfig;
-import com.gemsrobotics.subsystems.inventory.DumbUltrasonicInventory;
+import com.gemsrobotics.subsystems.inventory.DumbInventory;
 import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.subsystems.drive.DrivePorts;
@@ -15,6 +16,8 @@ import com.gemsrobotics.subsystems.pto.PTO;
 import com.gemsrobotics.subsystems.pto.PTOConfig;
 import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.camera.Limelight;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.*;
 import com.moandjiezana.toml.Toml;
 
@@ -35,7 +38,8 @@ public class Hardware {
 	private final MyAHRS m_ahrs;
 	private final Relay m_leds;
 	private final PTO m_pto;
-	private final Solenoid m_backLegs;
+	private final Solenoid m_legsBack, m_legsFront;
+	private final WPI_TalonSRX m_rollers;
 
 	private static Hardware INSTANCE;
 
@@ -52,7 +56,7 @@ public class Hardware {
 				driveCfg = getConfig("drive"),
 				shifterCfg = getConfig("shifter"),
 				liftCfg = getConfig("lift"),
-				manipulatorCfg = getConfig("manipulator"),
+				manipulatorCfgRaw = getConfig("manipulator"),
 				inventoryCfg = getConfig("inventory"),
 				ledsCfg = getConfig("relay"),
 				lateralCfg = getConfig("lateralAdjuster"),
@@ -61,13 +65,17 @@ public class Hardware {
 		final List<Long> shifterPorts = shifterCfg.getList("ports");
 
 		final var ultraCfg = inventoryCfg.to(UltrasonicInventoryConfig.class);
-		m_inventory = new DumbUltrasonicInventory(ultraCfg);
+		m_inventory = new DumbInventory(ultraCfg);
 		m_leds = new Relay(ledsCfg.getLong("port").intValue());
 		m_limelight = new Limelight();
 		m_compressor = new Compressor();
 		m_lift = new Lift(liftCfg.to(LiftConfig.class));
 		m_ahrs = new MyAHRS(SPI.Port.kMXP);
-		m_manipulator = new Manipulator(manipulatorCfg.to(ManipulatorConfig.class));
+
+		final var manipulatorConfig = manipulatorCfgRaw.to(ManipulatorConfig.class);
+
+		m_manipulator = new Manipulator(manipulatorConfig);
+		m_rollers = new WPI_TalonSRX(manipulatorConfig.stage1Port);
 
 		m_lateral = new LateralAdjuster(lateralCfg.to(LateralAdjusterConfig.class));
 
@@ -85,7 +93,8 @@ public class Hardware {
 		);
 
 		m_pto = new PTO(ptoCfg.to(PTOConfig.class));
-		m_backLegs = new Solenoid(5);
+		m_legsBack = new Solenoid(5);
+		m_legsFront = new Solenoid(manipulatorConfig.extenderPort);
 	}
 
 	public DifferentialDrive getChassis() {
@@ -129,6 +138,14 @@ public class Hardware {
 	}
 
 	public Solenoid getBackLegs() {
-		return m_backLegs;
+		return m_legsBack;
+	}
+
+	public Solenoid getFrontLegs() {
+		return m_legsFront;
+	}
+
+	public WPI_TalonSRX getRollers() {
+		return m_rollers;
 	}
 }

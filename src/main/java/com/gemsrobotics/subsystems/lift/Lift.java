@@ -26,7 +26,7 @@ public class Lift implements Sendable {
 		CARGO_3(0.968),
 		CARGO_2(0.613),
 		CARGO_1(0.264),
-		CARGO_SHIP(0.477),
+		CARGO_SHIP(44.54),
 		BOTTOM(0.0);
 
 		private static double TOP_INCHES = 79.5;
@@ -50,6 +50,7 @@ public class Lift implements Sendable {
 	private final LiftConfig m_liftConfig;
 
 	private String m_name, m_subsystem;
+	private Position m_setPosition;
 	private double m_setpoint;
 
 	public Lift(final LiftConfig liftConfig) {
@@ -70,6 +71,7 @@ public class Lift implements Sendable {
 		m_motorSlave.setInverted(true);
 		m_motorSlave.follow(m_motorMaster, true);
 
+		m_setPosition = Position.BOTTOM;
 		m_setpoint = 0.0;
 	}
 
@@ -233,5 +235,9 @@ public class Lift implements Sendable {
 
 	public Command makeLogger() {
 		return new LiftLogger(this);
+	}
+
+	public Position getSetPosition() {
+		return m_setPosition;
 	}
 }

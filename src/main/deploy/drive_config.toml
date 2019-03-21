@@ -11,6 +11,9 @@ wheelDiameter = 6.25
 maxVelocity = 0.0
 maxAcceleration = 0.0
 maxJerk = 0.0
+quickstopThreshold = 0.2
+turnSensitivity = 1.0
+alpha = 0.1
 
 [localizations.pidDrive]
 kP = 1.0

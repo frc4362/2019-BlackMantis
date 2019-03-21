@@ -1,5 +1,6 @@
 package com.gemsrobotics;
 
+import com.gemsrobotics.commands.ClimberRollerListener;
 import com.gemsrobotics.commands.LiftScrubber;
 import com.gemsrobotics.commands.LiftUnstucker;
 import com.gemsrobotics.commands.ShifterListener;
@@ -21,6 +22,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotInit() {
 		m_hardware = Hardware.getInstance();
+
 		m_oi = new OperatorInterface(0, 1, 2);
 
 		m_compressorToggler = new SendableChooser<>() {{
@@ -42,8 +44,11 @@ public class Robot extends TimedRobot {
 	}
 
 	private void initDriverControl() {
+		m_oi.resetControls();
+
 		m_hardware.getPTO().disengage();
 		m_hardware.getBackLegs().set(false);
+		m_hardware.getFrontLegs().set(false);
 
 		final var controller = m_oi.getController();
 
@@ -76,8 +81,6 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void teleopPeriodic() {
-		SmartDashboard.putNumber("Lateral Movement Reading",
-			Hardware.getInstance().getLateralAdjuster().getPosition());
 		Scheduler.getInstance().run();
 	}
 
@@ -85,6 +88,11 @@ public class Robot extends TimedRobot {
 	public void autonomousInit() {
 		Scheduler.getInstance().removeAll();
 		initDriverControl();
+	}
+
+	@Override
+	public void autonomousPeriodic() {
+		Scheduler.getInstance().run();
 	}
 
 	@Override

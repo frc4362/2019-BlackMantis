@@ -17,6 +17,10 @@ public class PTO {
 		m_solenoid.set(false);
 	}
 
+	public boolean isEngaged() {
+		return m_solenoid.get();
+	}
+
 	public Solenoid getSolenoid() {
 		return m_solenoid;
 	}

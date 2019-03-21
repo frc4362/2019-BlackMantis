@@ -28,7 +28,7 @@ public final class RobotStateEstimator extends Command {
 		m_encoderPrevDistanceLeft = m_vehicle.getInchesPosition(Side.LEFT);
 		m_encoderPrevDistanceRight = m_vehicle.getInchesPosition(Side.RIGHT);
 	}
-
+	int count = 0;
 	@Override
 	public void execute() {
 		final double distanceLeft = m_vehicle.getInchesPosition(Side.LEFT),
@@ -43,8 +43,11 @@ public final class RobotStateEstimator extends Command {
 				m_vehicle.getInchesPerSecond(Side.LEFT) * dt,
 				m_vehicle.getInchesPerSecond(Side.RIGHT) * dt);
 
-		System.out.println("Velocity Measured: " + velocityMeasured.toString());
-		System.out.println("Velocity Predicted: " + velocityPredicted.toString());
+//		if(count++ > 10) {
+//			System.out.println("Velocity Measured: " + velocityMeasured.toString());
+//			System.out.println("Velocity Predicted: " + velocityPredicted.toString());
+//			count = 0;
+//		}
 
 		m_vehicle.getState().addObservations(
 				Timer.getFPGATimestamp(),

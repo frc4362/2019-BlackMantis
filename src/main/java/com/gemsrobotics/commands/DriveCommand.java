@@ -22,7 +22,7 @@ import static java.lang.Math.abs;
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class DriveCommand extends Command {
 	private static final double kTurn = 0.01;
-	private static final double kP = 0.92;
+	private static final double kP = 1.5;
 	private static final double
 			SLOWDOWN_PERCENT = 3,
 			PLACEMENT_PERCENT = 6,
