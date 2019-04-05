@@ -26,7 +26,7 @@ public class Lift implements Sendable {
 		CARGO_3(0.968),
 		CARGO_2(0.613),
 		CARGO_1(0.264),
-		CARGO_SHIP(44.54),
+		CARGO_SHIP(0.4454),
 		BOTTOM(0.0);
 
 		private static double TOP_INCHES = 79.5;
@@ -95,7 +95,7 @@ public class Lift implements Sendable {
 		m_motorMaster.getPIDController().setReference(setpoint, ControlType.kPosition);
 	}
 
-	public void setPreset(final Position pos) {
+	public void setPosition(final Position pos) {
 		setRotations(toRotations(pos.percent));
 	}
 

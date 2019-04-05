@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj.Preferences;
  */
 public class DelayedAutonFactory {
 	// the key in SmartDashboard Preferences
-	// which may be used to set the auton delay
+	// which may be used to setPercent the auton delay
 	private static final String AUTON_DELAY_AMOUNT_KEY = "DS";
 
 	/**

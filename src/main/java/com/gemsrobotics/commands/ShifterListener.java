@@ -23,11 +23,11 @@ public class ShifterListener extends Command {
         if (gear != m_lastGear) {
             switch (gear) {
                 case HIGH:
-                    m_light.set(Relay.Value.kOn);
+                    m_light.set(Relay.Value.kOff);
                     break;
                 case LOW:
                 default:
-                    m_light.set(Relay.Value.kOff);
+                    m_light.set(Relay.Value.kOn);
                     break;
             }
         }

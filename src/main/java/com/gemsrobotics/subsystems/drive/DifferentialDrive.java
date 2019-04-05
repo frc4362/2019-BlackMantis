@@ -15,8 +15,8 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.ControlType;
 import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Sendable;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilder;
@@ -63,7 +63,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	public DifferentialDrive(
 			final DrivePorts drivePorts,
 			final Localizations localizations,
-			final DoubleSolenoid shifter,
+			final Solenoid shifter,
 			final MyAHRS ahrs,
 			final boolean useVelocityControl
 	) {

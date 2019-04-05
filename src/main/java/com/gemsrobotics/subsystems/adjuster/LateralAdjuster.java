@@ -4,20 +4,21 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.gemsrobotics.util.PIDF;
-import com.gemsrobotics.util.motion.Rotation;
 import com.gemsrobotics.util.motion.Translation;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static java.lang.Math.*;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class LateralAdjuster {
 	public final double kLatVolts;
 	private final WPI_TalonSRX m_motor;
-	private final double m_widthTicks, m_widthInches;
+	private final double m_widthTicks, m_widthInches, m_radiansToEnd;
+
+	private boolean m_isDisabled;
 
 	public LateralAdjuster(final LateralAdjusterConfig cfg) {
 		kLatVolts = cfg.nominalVolts;
+		m_radiansToEnd = cfg.adjustmentThresholdRadians;
 
 		m_motor = new WPI_TalonSRX(cfg.port);
 
@@ -36,6 +37,8 @@ public class LateralAdjuster {
 
 		m_widthTicks = cfg.leftDist - cfg.rightDist;
 		m_widthInches = cfg.widthInches;
+
+		m_isDisabled = false;
 	}
 
 	private static double constrain(
@@ -46,11 +49,11 @@ public class LateralAdjuster {
 		return max(bot, min(val, top));
 	}
 
-	private void setTicks(double ticks) {
+	public void setTicks(double ticks) {
 		m_motor.set(ControlMode.Position, constrain(-m_widthTicks / 2, ticks, m_widthTicks / 2));
 	}
 
-	public void set(final double percent) {
+	public void setPercent(final double percent) {
 		setTicks(percent * m_widthTicks - m_widthTicks / 2);
 	}
 
@@ -62,10 +65,14 @@ public class LateralAdjuster {
 		m_motor.set(ControlMode.PercentOutput, 0);
 	}
 
-	public void align(final Translation trans) {
-		final double proportion = (trans.y() / m_widthInches) * m_widthTicks;
-		final double adjusted = -(proportion - (m_widthTicks / 2));
+	public void alignTranslation(final Translation trans) {
+		final var proportion = (trans.y() / m_widthInches) * m_widthTicks;
+		final var adjusted = -(proportion - (m_widthTicks / 2));
 		setTicks(adjusted);
+	}
+
+	public void alignRadians(final double radiansFromCenter) {
+		setPercent((radiansFromCenter / m_radiansToEnd + 1) / 2);
 	}
 
 	public WPI_TalonSRX getMotor() {
@@ -74,5 +81,17 @@ public class LateralAdjuster {
 
 	public double getPosition() {
 		return m_motor.getSelectedSensorPosition(0);
+	}
+
+	public double getAdjustmentThreshold() {
+		return m_radiansToEnd;
+	}
+
+	public void disable() {
+		m_isDisabled = true;
+	}
+
+	public boolean isDisabled() {
+		return m_isDisabled;
 	}
 }

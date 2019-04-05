@@ -51,7 +51,7 @@ public final class DPadListener extends Command {
 	}
 
 	/**
-	 * Internal constructor used to set up the actual controls
+	 * Internal constructor used to setPercent up the actual controls
 	 * @param controller {@link XboxController} to be bound to
 	 * @param bindings The commands to be bound to angles on the POV
 	 */

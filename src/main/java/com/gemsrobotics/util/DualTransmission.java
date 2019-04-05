@@ -2,6 +2,7 @@ package com.gemsrobotics.util;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.Solenoid;
 
 public class DualTransmission {
 	public enum Gear {
@@ -15,17 +16,17 @@ public class DualTransmission {
 		}
 	}
 
-	private final DoubleSolenoid m_shifter;
+	private final Solenoid m_shifter;
 
-	public DualTransmission(final DoubleSolenoid shifter) {
+	public DualTransmission(final Solenoid shifter) {
 		m_shifter = shifter;
 	}
 
 	public Gear get() {
-		return m_shifter.get() == Value.kForward ? Gear.HIGH : Gear.LOW;
+		return m_shifter.get() ? Gear.LOW : Gear.HIGH;
 	}
 
 	public void set(final Gear gear) {
-		m_shifter.set(gear == Gear.HIGH ? Value.kForward : Value.kReverse);
+		m_shifter.set(gear == Gear.HIGH);
 	}
 }

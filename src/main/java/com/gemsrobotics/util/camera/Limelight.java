@@ -1,23 +1,33 @@
 package com.gemsrobotics.util.camera;
 
+import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
+import java.util.Optional;
+
 @SuppressWarnings("unused")
 public class Limelight {
+	private final NetworkTable m_table;
+
 	private final NetworkTableEntry
 			m_presentEntry, m_offsetHorizontalEntry, m_offsetVerticalEntry,
 			m_areaEntry, m_modeLedEntry, m_modeCameraEntry, m_pipelineEntry;
 
 	public Limelight() {
-		final var table = NetworkTableInstance.getDefault().getTable("limelight");
-		m_presentEntry = table.getEntry("tv");
-		m_offsetHorizontalEntry = table.getEntry("tx");
-		m_offsetVerticalEntry = table.getEntry("ty");
-		m_areaEntry = table.getEntry("ta");
-		m_modeLedEntry = table.getEntry("ledMode");
-		m_modeCameraEntry = table.getEntry("cameraMode");
-		m_pipelineEntry = table.getEntry("pipeline");
+		m_table = NetworkTableInstance.getDefault().getTable("limelight");
+		m_presentEntry = m_table.getEntry("tv");
+		m_offsetHorizontalEntry = m_table.getEntry("tx");
+		m_offsetVerticalEntry = m_table.getEntry("ty");
+		m_areaEntry = m_table.getEntry("ta");
+		m_modeLedEntry = m_table.getEntry("ledMode");
+		m_modeCameraEntry = m_table.getEntry("cameraMode");
+		m_pipelineEntry = m_table.getEntry("pipeline");
+	}
+
+	public Optional<Double> getRawProperty(final String property) {
+		final var val = m_table.getEntry(property).getDouble(999);
+		return Optional.ofNullable(val == 999 ? null : val);
 	}
 
 	public enum LEDMode {

@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj.command.InstantCommand;
  * A utility class for the creation and composition of {@link Command}s
  * and {@link CommandGroup}s
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
 public final class Commands {
 	private Commands() {}
 
@@ -53,7 +52,7 @@ public final class Commands {
 	/**
 	 * @return A useless, do-nothing command for composition and a default value in various places
 	 */
-	public static Command nullCommand() {
+	public static InstantCommand nullCommand() {
 		return commandOf(() -> {});
 	}
 }

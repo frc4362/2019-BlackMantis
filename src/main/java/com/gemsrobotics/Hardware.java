@@ -16,8 +16,6 @@ import com.gemsrobotics.subsystems.pto.PTO;
 import com.gemsrobotics.subsystems.pto.PTOConfig;
 import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.camera.Limelight;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.*;
 import com.moandjiezana.toml.Toml;
 
@@ -38,7 +36,8 @@ public class Hardware {
 	private final MyAHRS m_ahrs;
 	private final Relay m_leds;
 	private final PTO m_pto;
-	private final Solenoid m_legsBack, m_legsFront;
+	private final DoubleSolenoid m_legsBack;
+	private final Solenoid m_legsFront;
 	private final WPI_TalonSRX m_rollers;
 
 	private static Hardware INSTANCE;
@@ -62,7 +61,7 @@ public class Hardware {
 				lateralCfg = getConfig("lateralAdjuster"),
 				ptoCfg = getConfig("pto");
 
-		final List<Long> shifterPorts = shifterCfg.getList("ports");
+		final var shifterPort = shifterCfg.getLong("port");
 
 		final var ultraCfg = inventoryCfg.to(UltrasonicInventoryConfig.class);
 		m_inventory = new DumbInventory(ultraCfg);
@@ -79,10 +78,7 @@ public class Hardware {
 
 		m_lateral = new LateralAdjuster(lateralCfg.to(LateralAdjusterConfig.class));
 
-		final DoubleSolenoid shifter = new DoubleSolenoid(
-				shifterPorts.get(0).intValue(),
-				shifterPorts.get(1).intValue()
-		);
+		final var shifter = new Solenoid(shifterPort.intValue());
 
 		m_chassis = new DifferentialDrive(
 				driveCfg.getTable("ports").to(DrivePorts.class),
@@ -93,7 +89,7 @@ public class Hardware {
 		);
 
 		m_pto = new PTO(ptoCfg.to(PTOConfig.class));
-		m_legsBack = new Solenoid(5);
+		m_legsBack = new DoubleSolenoid(6, 7);
 		m_legsFront = new Solenoid(manipulatorConfig.extenderPort);
 	}
 
@@ -137,7 +133,7 @@ public class Hardware {
 		return m_pto;
 	}
 
-	public Solenoid getBackLegs() {
+	public DoubleSolenoid getBackLegs() {
 		return m_legsBack;
 	}
 

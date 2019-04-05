@@ -6,10 +6,13 @@ import com.gemsrobotics.subsystems.manipulator.Manipulator;
 import edu.wpi.first.wpilibj.command.Command;
 
 public class CargoHeightBoostListener extends Command {
+	private static final int RAISE_DELAY_MS = 200;
+
 	private final Lift m_lift;
 	private final Manipulator m_intake;
 	private final Inventory m_inventory;
 
+	private int m_ticksToDelay;
 	private boolean m_hadCargoLast;
 
 	public CargoHeightBoostListener(
@@ -24,6 +27,7 @@ public class CargoHeightBoostListener extends Command {
 
 	@Override
 	public void initialize() {
+		m_ticksToDelay = -1;
 		m_hadCargoLast = false;
 	}
 
@@ -36,7 +40,14 @@ public class CargoHeightBoostListener extends Command {
 			&& m_intake.getCurrentRunMode() == Manipulator.RunMode.INTAKING
 			&& m_lift.getSetPosition() == Lift.Position.BOTTOM
 		) {
-			m_lift.setPreset(Lift.Position.CARGO_SHIP);
+			m_ticksToDelay = RAISE_DELAY_MS / 20;
+		}
+
+		if (m_ticksToDelay == 0) {
+			m_lift.setPosition(Lift.Position.CARGO_1);
+			m_ticksToDelay = -1;
+		} else if (m_ticksToDelay > 0) {
+			m_ticksToDelay -= 1;
 		}
 
 		m_hadCargoLast = hasCargo;

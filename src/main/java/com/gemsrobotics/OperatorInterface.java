@@ -1,5 +1,7 @@
 package com.gemsrobotics;
 
+import com.gemsrobotics.commands.AutoPickupCommand;
+import com.gemsrobotics.commands.AutoPlaceFactory;
 import com.gemsrobotics.commands.ClimberRollerListener;
 import com.gemsrobotics.subsystems.lift.Lift;
 import com.gemsrobotics.subsystems.manipulator.Manipulator.RunMode;
@@ -7,11 +9,14 @@ import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.joy.Gembutton;
 import com.gemsrobotics.util.joy.Gemstick;
 import com.gemsrobotics.util.joy.Gemstick.POVState;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.buttons.POVButton;
 import edu.wpi.first.wpilibj.buttons.Trigger;
 import edu.wpi.first.wpilibj.command.Scheduler;
+
+import java.util.Objects;
 
 import static com.gemsrobotics.util.command.Commands.commandOf;
 
@@ -37,75 +42,64 @@ public final class OperatorInterface {
 				shiftUpButton = new Gembutton(m_stickRight, 1),
 				intakeButton = new Gembutton(m_controller, 1),
 				exhaustButton = new Gembutton(m_controller, 4),
-				frontLegReleaseButton = new Gembutton(m_controller, 3),
-				punchHoldButton = new Gembutton(m_controller, 5),
-				handToggler = new Gembutton(m_controller, 6);
+				handButton = new Gembutton(m_controller, 5),
+				armButton = new Gembutton(m_controller, 6),
+				hab3FrontLegButton = new Gembutton(m_controller, 3),
+				cargoHeightButton = new Gembutton(m_controller, 7),
+				hab2FrontLegButton = new Gembutton(m_stickRight, 9),
+				hab2BackLegButton = new Gembutton(m_stickRight, 11);
 
 		final POVButton
-				cargoShipHeightButton = new POVButton(m_controller, POVState.W.toDegrees()),
+				autoPickupButton = new POVButton(m_controller, POVState.W.toDegrees()),
 				height1Button = new POVButton(m_controller, POVState.S.toDegrees()),
 				height2Button = new POVButton(m_controller, POVState.E.toDegrees()),
 				height3Button = new POVButton(m_controller, POVState.N.toDegrees());
 
 		m_rollerListener = new ClimberRollerListener(hw.getRollers(), m_controller);
 
-		final Trigger backLegsReleaseButton = new Trigger() {
-			private boolean getButtons() {
-				return m_controller.getRawButton(7) && m_controller.getRawButton(8);
-			}
-
-			@Override
-			public boolean get() {
-				final var ds = DriverStation.getInstance();
-
-				if (ds.isFMSAttached()) {
-					final var validTime = hw.getPTO().isEngaged() && !ds.isAutonomous();
-					return getButtons() && validTime;
-				} else {
-					return getButtons();
-				}
-			}
-		};
-
 		final Trigger ptoDeployButton = new Trigger() {
 			@Override
 			public boolean get() {
 				final var ds = DriverStation.getInstance();
-				return (!ds.isAutonomous() || ds.getMatchTime() < 30)
-						&& m_stickRight.getRawButton(7);
+				return (!ds.isAutonomous() || ds.getMatchTime() < 30) && m_stickRight.getRawButton(7);
 			}
 		};
 
 		ptoDeployButton.whenActive(commandOf(() -> {
 			hw.getPTO().engage();
-			hw.getBackLegs().set(false);
-			hw.getFrontLegs().set(false);
+			hw.getBackLegs().set(DoubleSolenoid.Value.kReverse);
+			hw.getFrontLegs().set(true);
 			hw.getManipulator().setSetSpeed(RunMode.HALTED);
+			hw.getLateralAdjuster().disable();
 
 			if (!m_rollerListener.hasPreviouslyRun()) {
 				Scheduler.getInstance().add(m_rollerListener);
 			}
 		}));
 
-		ptoDeployButton.whenInactive(commandOf(() -> {
-			if (!backLegsReleaseButton.get()) {
-				hw.getBackLegs().set(true);
-			}
-
-			if (!frontLegReleaseButton.get()) {
-				hw.getFrontLegs().set(true);
-			}
+		hab3FrontLegButton.whenInactive(commandOf(() -> {
+			hw.getFrontLegs().set(false);
+			hw.getPTO().disengage();
 		}));
 
-		backLegsReleaseButton.whenActive(commandOf(() ->
-			  hw.getBackLegs().set(true)));
-
-		frontLegReleaseButton.whenPressed(commandOf(() -> {
+		hab2FrontLegButton.whenPressed(commandOf(() -> {
 		  	  if (hw.getPTO().isEngaged()) {
 				  hw.getFrontLegs().set(true);
 				  hw.getPTO().disengage();
 			  }
 		}));
+
+		hab2FrontLegButton.whenPressed(() ->
+			  hw.getFrontLegs().set(true));
+
+		hab2FrontLegButton.whenReleased(() ->
+			  hw.getFrontLegs().set(false));
+
+		hab2BackLegButton.whenPressed(() ->
+		      hw.getBackLegs().set(DoubleSolenoid.Value.kReverse));
+
+		hab2BackLegButton.whenReleased(() ->
+			  hw.getBackLegs().set(DoubleSolenoid.Value.kForward));
 
 		final Runnable intakeNeutralizer = () ->
 			  hw.getManipulator().setSetSpeed(RunMode.NEUTRAL);
@@ -116,78 +110,125 @@ public final class OperatorInterface {
 		final var lift = hw.getLift();
 
 		shiftUpButton.whenPressed(() ->
-			  transmission.set(Gear.HIGH));
+		    transmission.set(Gear.HIGH));
 		shiftDownButton.whenPressed(() ->
-			  transmission.set(Gear.LOW));
+		    transmission.set(Gear.LOW));
 
 		intakeButton.whileHeld(() ->
-			  manipulator.setSetSpeed(RunMode.INTAKING));
+		    manipulator.setSetSpeed(RunMode.INTAKING));
 		intakeButton.whenReleased(intakeNeutralizer);
 
 		exhaustButton.whileHeld(() ->
-			  manipulator.setSetSpeed(RunMode.EXHAUSTING));
+		    manipulator.setSetSpeed(RunMode.EXHAUSTING));
 		exhaustButton.whenReleased(intakeNeutralizer);
 
-		punchHoldButton.whenPressed(() ->
-			manipulator.getLongPlacer().set(true));
-		punchHoldButton.whenReleased(() ->
-			manipulator.getLongPlacer().set(false));
-		handToggler.whenPressed(
-				() -> manipulator.getPlacer().set(true));
-		handToggler.whenReleased(
-				() -> manipulator.getPlacer().set(false));
+		handButton.whenPressed(() ->
+			manipulator.getHand().set(true));
+		handButton.whenReleased(() ->
+			manipulator.getHand().set(false));
+		armButton.whenPressed(() ->
+			manipulator.getArm().set(true));
+		armButton.whenReleased(() ->
+		    manipulator.getArm().set(false));
 
-		cargoShipHeightButton.whenPressed(commandOf(() ->
-			lift.setPreset(Lift.Position.CARGO_SHIP)));
+		final var autoPickupSequence = new AutoPickupCommand(
+				manipulator,
+				Hardware.getInstance().getLimelight()
+		);
+
+		autoPickupButton.whenPressed(autoPickupSequence);
+		autoPickupButton.whenReleased(commandOf(() -> {
+			if (autoPickupSequence.isRunning()) {
+				manipulator.getArm().set(false);
+				manipulator.getHand().set(false);
+			}
+
+			autoPickupSequence.cancel();
+		}));
+
+		final var autoPlaceFactory = new AutoPlaceFactory(lift, manipulator);
+
+		cargoHeightButton.whenPressed(commandOf(() ->
+			lift.setPosition(Lift.Position.CARGO_SHIP)));
 
 		height1Button.whenPressed(commandOf(() -> {
+			Lift.Position position = null;
+
 			switch (inventory.getCurrentPiece()) {
 				case PANEL:
-					lift.setPreset(Lift.Position.PANEL_1);
+					position = Lift.Position.PANEL_1;
 					System.out.println("Moved to PANEL_1");
 					break;
 				case CARGO:
-					lift.setPreset(Lift.Position.CARGO_1);
+					lift.setPosition(Lift.Position.CARGO_1);
 					System.out.println("Moved to CARGO_1");
-					break;
+					return;
 				case NONE:
 				default:
 					System.out.println("Setpoint commanded, but no gamepiece found!");
 					break;
+			}
+
+			if (!Objects.isNull(position)) {
+				if (m_controller.getRawButton(8)) {
+					lift.setPosition(position);
+				} else {
+					Scheduler.getInstance().add(autoPlaceFactory.makeAutoPlace(position));
+				}
 			}
 		}));
 
 		height2Button.whenPressed(commandOf(() -> {
+			Lift.Position position = null;
+
 			switch (inventory.getCurrentPiece()) {
 				case PANEL:
-					lift.setPreset(Lift.Position.PANEL_2);
+					position = Lift.Position.PANEL_2;
 					System.out.println("Moved to PANEL_2");
 					break;
 				case CARGO:
-					lift.setPreset(Lift.Position.CARGO_2);
+					lift.setPosition(Lift.Position.CARGO_2);
 					System.out.println("Moved to CARGO_2");
-					break;
+					return;
 				case NONE:
 				default:
 					System.out.println("Setpoint commanded, but no gamepiece found!");
 					break;
 			}
+
+			if (!Objects.isNull(position)) {
+				if (m_controller.getRawButton(8)) {
+					lift.setPosition(position);
+				} else {
+					Scheduler.getInstance().add(autoPlaceFactory.makeAutoPlace(position));
+				}
+			}
 		}));
 
 		height3Button.whenPressed(commandOf(() -> {
+			Lift.Position position = null;
+
 			switch (inventory.getCurrentPiece()) {
 				case PANEL:
-					lift.setPreset(Lift.Position.PANEL_3);
+					position = Lift.Position.PANEL_3;
 					System.out.println("Moved to PANEL_3");
 					break;
 				case CARGO:
-					lift.setPreset(Lift.Position.CARGO_3);
+					lift.setPosition(Lift.Position.CARGO_3);
 					System.out.println("Moved to CARGO_3");
-					break;
+					return;
 				case NONE:
 				default:
 					System.out.println("Setpoint commanded, but no gamepiece found!");
 					break;
+			}
+
+			if (!Objects.isNull(position)) {
+				if (m_controller.getRawButton(8)) {
+					lift.setPosition(position);
+				} else {
+					Scheduler.getInstance().add(autoPlaceFactory.makeAutoPlace(position));
+				}
 			}
 		}));
 	}
