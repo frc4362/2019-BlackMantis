@@ -8,7 +8,10 @@ import static com.gemsrobotics.util.command.Commands.commandOf;
 
 @SuppressWarnings("WeakerAccess")
 public class PlacementSequence extends CommandGroup {
-	public PlacementSequence(final Manipulator manipulator) {
+	public PlacementSequence(
+			final Manipulator manipulator,
+			final boolean open
+	) {
 		addSequential(commandOf(() -> {
 			manipulator.getArm().set(true);
 			manipulator.getHand().set(false);
@@ -26,7 +29,7 @@ public class PlacementSequence extends CommandGroup {
 		addSequential(new Wait(100));
 		addSequential(commandOf(() -> {
 			manipulator.getArm().set(false);
-			manipulator.getHand().set(false);
+			manipulator.getHand().set(!open);
 		}));
 	}
 }

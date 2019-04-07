@@ -4,9 +4,11 @@ package com.gemsrobotics.util.command;
 import java.util.Arrays;
 import java.util.List;
 
+import edu.wpi.first.wpilibj.buttons.Trigger;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.CommandGroup;
 import edu.wpi.first.wpilibj.command.InstantCommand;
+import edu.wpi.first.wpilibj.command.Scheduler;
 
 /**
  * A utility class for the creation and composition of {@link Command}s
@@ -54,5 +56,33 @@ public final class Commands {
 	 */
 	public static InstantCommand nullCommand() {
 		return commandOf(() -> {});
+	}
+
+	public static Command listenForFinish(final Command livingCommand, final Command andThen) {
+		return new Command() {
+			@Override
+			public boolean isFinished() {
+				return !livingCommand.isRunning();
+			}
+
+			@Override
+			public void end() {
+				Scheduler.getInstance().add(andThen);
+			}
+		};
+	}
+
+	public static Command waitForRelease(final Trigger trigger, final Runnable finish) {
+		return new Command() {
+			@Override
+			protected boolean isFinished() {
+				return !trigger.get();
+			}
+
+			@Override
+			protected void end() {
+				finish.run();
+			}
+		};
 	}
 }

@@ -13,15 +13,15 @@ public class AutoPickupCommand extends Command {
     private boolean m_isFinished;
 
     public AutoPickupCommand(
-        final Manipulator manipulator, 
-        final Limelight limelight
+            final Manipulator manipulator,
+            final Limelight limelight
     ) {
         m_manipulator = manipulator;
         m_limelight = limelight;
     }
 
     private enum State {
-        APPROACHING, READY_FOR_PICKUP, READY_FOR_DEPARTURE
+        APPROACHING, READY_TO_EXTEND, READY_FOR_PICKUP, READY_FOR_DEPARTURE
     }
 
     @Override
@@ -34,21 +34,25 @@ public class AutoPickupCommand extends Command {
     public void execute() {
         final var area = m_limelight.getArea();
 
-        if (area > 17 && m_state == State.APPROACHING) {
+        if (area > 1.5 && m_state == State.APPROACHING) {
+            m_state = State.READY_TO_EXTEND;
+            m_manipulator.getHand().set(true);
+        }
+
+        if (area > 17 && m_state == State.READY_TO_EXTEND) {
             m_state = State.READY_FOR_PICKUP;
             m_manipulator.getArm().set(true);
-            m_manipulator.getHand().set(true);
-        } 
-        
-        // if the driver backs out
-        if (area < 15 && m_state == State.READY_FOR_PICKUP) {
-            m_state = State.APPROACHING;
-            m_manipulator.getArm().set(false);
-            m_manipulator.getHand().set(false);
-        } 
+        }
 
         if (area > 29 && m_state == State.READY_FOR_PICKUP) {
             m_state = State.READY_FOR_DEPARTURE;
+            m_manipulator.getHand().set(false);
+        }
+
+        // if the driver backs out
+        if (area < 13 && m_state == State.READY_FOR_PICKUP) {
+            m_state = State.APPROACHING;
+            m_manipulator.getArm().set(false);
             m_manipulator.getHand().set(false);
         }
 
@@ -57,7 +61,7 @@ public class AutoPickupCommand extends Command {
             m_manipulator.getArm().set(false);
         }
     }
- 
+
     @Override
     public boolean isFinished() {
         return m_isFinished;

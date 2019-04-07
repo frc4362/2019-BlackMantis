@@ -3,7 +3,6 @@ package com.gemsrobotics.commands;
 import com.gemsrobotics.commands.any.Wait;
 import com.gemsrobotics.subsystems.lift.Lift;
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
-import com.gemsrobotics.util.command.Commands;
 import edu.wpi.first.wpilibj.command.Command;
 
 import java.util.HashMap;
@@ -30,7 +29,7 @@ public class AutoPlaceFactory {
 		m_positionReady = new HashMap<>();
 	}
 
-	public Command makeAutoPlace(final Lift.Position position) {
+	public Command makeAutoPlace(final Lift.Position position, final boolean openAfterFinish) {
 		final var currentTime = System.currentTimeMillis();
 
 		final Command ret;
@@ -44,12 +43,12 @@ public class AutoPlaceFactory {
 			ret = autonOf(
 					new LiftMovement(m_lift, position),
 					new Wait(50),
-					new PlacementSequence(m_manipulator),
+					new PlacementSequence(m_manipulator, openAfterFinish),
 					commandOf(() -> m_positionReady.put(position, true)));
 
 			m_lastCreationTimes.put(position, currentTime);
 		} else {
-			ret = Commands.nullCommand();
+			ret = null;
 		}
 
 		return ret;

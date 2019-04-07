@@ -7,6 +7,7 @@ import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.camera.Limelight;
 import com.gemsrobotics.util.joy.Gemstick;
 import com.gemsrobotics.util.joy.Gemstick.Lens;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import jaci.pathfinder.Pathfinder;
@@ -17,19 +18,18 @@ import jaci.pathfinder.modifiers.TankModifier;
 
 import static jaci.pathfinder.Pathfinder.boundHalfDegrees;
 import static jaci.pathfinder.Pathfinder.d2r;
-import static java.lang.Math.abs;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class DriveCommand extends Command {
 	private static final double kTurn = 0.01;
 	private static final double kP = 1.3;
-	private static final double
-			SLOWDOWN_PERCENT = 3,
-			PLACEMENT_PERCENT = 6,
-			MINIMUM_SPEED = 0.3;
+	private static final double SLOWDOWN_PERCENT = 0.5;
 
 	private final DifferentialDrive m_chassis;
 	private final Gemstick m_stick, m_wheel;
+	private final XboxController m_controller;
 	private final Limelight m_limelight;
 	private final MyAHRS m_ahrs;
 	private final SendableChooser<Boolean> m_toggler;
@@ -48,6 +48,7 @@ public class DriveCommand extends Command {
 		m_ahrs = chassis.getAHRS();
 		m_stick = oi.getStickLeft();
 		m_wheel = oi.getStickRight();
+		m_controller = oi.getController();
 		m_limelight = limelight;
 
 		m_isFollowingTrajectory = false;
@@ -90,7 +91,7 @@ public class DriveCommand extends Command {
 		return m_limelight.getOffsetHorizontal() * kP;
 	}
 
-	private boolean shouldSlowDown() {
+	private boolean isSlowableArea() {
 		return m_limelight.getArea() > SLOWDOWN_PERCENT;
 	}
 
@@ -123,16 +124,14 @@ public class DriveCommand extends Command {
 				} else {
 					rotationalPower = m_wheel.get(Lens.X);
 				}
-
-				if (shouldSlowDown()) {
-					final double ratio = 1 - (m_limelight.getArea() / PLACEMENT_PERCENT);
-					final double mag = abs(linearPower);
-					final double newSpeed = Math.min(mag * ratio + MINIMUM_SPEED, mag);
-					linearPower = Math.copySign(newSpeed, linearPower);
-				}
 			} else {
 				isQuickTurn = m_wheel.getRawButton(3);
 				rotationalPower =  m_wheel.get(Lens.X);
+			}
+
+			if (isSlowableArea() && m_controller.getPOV() != -1) {
+				final var area = m_limelight.getArea();
+				linearPower = min(0.25 + 0.75 * max(((area - 6) / -5.5), 0), linearPower);
 			}
 
 			m_chassis.curvatureDrive(

@@ -1,7 +1,5 @@
 package com.gemsrobotics.util;
 
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.Solenoid;
 
 public class DualTransmission {
