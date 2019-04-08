@@ -1,6 +1,7 @@
 package com.gemsrobotics;
 
 import com.gemsrobotics.commands.*;
+import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.util.DualTransmission;
 import com.gemsrobotics.util.camera.Limelight.LEDMode;
 import com.gemsrobotics.util.camera.Limelight.CameraMode;
@@ -39,11 +40,12 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putData("Compressor", m_compressorToggler);
 		SmartDashboard.putData("Drive", driveTrainToggler);
 
-		m_hardware.getChassis().getTransmission().set(DualTransmission.Gear.LOW);
-
 		final var limelight = m_hardware.getLimelight();
 		limelight.setCameraMode(CameraMode.CV);
-		m_hardware.getChassis().configureDriveCommand(limelight, m_oi, driveTrainToggler);
+
+		final var chassis = m_hardware.getChassis();
+		chassis.getTransmission().set(DualTransmission.Gear.LOW);
+		chassis.configureDriveCommand(limelight, m_oi, driveTrainToggler);
 	}
 
 	private void initDriverControl() {

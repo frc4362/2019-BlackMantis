@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.buttons.Button;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.buttons.POVButton;
 import edu.wpi.first.wpilibj.buttons.Trigger;
+import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 
 import java.util.Objects;
@@ -184,22 +185,20 @@ public final class OperatorInterface {
 			final Lift.Position panelPosition,
 			final Lift.Position cargoPosition
 	) {
+		final Command[] placementCommand = { null };
+
 		button.whenPressed(commandOf(() -> {
 			switch (m_inventory.getCurrentPiece()) {
 				case PANEL:
 					if (m_controller.getRawButton(8)) {
 						m_lift.setPosition(panelPosition);
 					} else {
-						final var cmd = autoPlaceFactory.makeAutoPlace(
+						placementCommand[0] = autoPlaceFactory.makeAutoPlace(
 								panelPosition,
 								false);
 
-						if (!Objects.isNull(cmd)) {
-							Scheduler.getInstance().add(cmd);
-							Scheduler.getInstance().add(Commands.listenForFinish(cmd,
-									Commands.waitForRelease(
-											new JoystickButton(m_controller, 8),
-											() -> m_manipulator.getHand().set(false))));
+						if (!Objects.isNull(placementCommand[0])) {
+							Scheduler.getInstance().add(placementCommand[0]);
 						}
 					}
 					break;
@@ -209,6 +208,18 @@ public final class OperatorInterface {
 				case NONE:
 				default:
 					break;
+			}
+		}));
+
+		button.whenReleased(commandOf(() -> {
+			if (placementCommand[0] != null) {
+				Scheduler.getInstance().add(
+						Commands.listenForFinish(placementCommand[0],
+												 commandOf(() -> m_manipulator.getHand().set(false))));
+			}
+
+			if (!m_controller.getRawButton(8)) {
+				m_lift.setPosition(Lift.Position.BOTTOM);
 			}
 		}));
 	}
