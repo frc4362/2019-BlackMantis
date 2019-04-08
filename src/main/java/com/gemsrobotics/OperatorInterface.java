@@ -192,6 +192,7 @@ public final class OperatorInterface {
 				case PANEL:
 					if (m_controller.getRawButton(8)) {
 						m_lift.setPosition(panelPosition);
+						placementCommand[0] = null;
 					} else {
 						placementCommand[0] = autoPlaceFactory.makeAutoPlace(
 								panelPosition,
@@ -212,10 +213,15 @@ public final class OperatorInterface {
 		}));
 
 		button.whenReleased(commandOf(() -> {
-			if (placementCommand[0] != null) {
-				Scheduler.getInstance().add(
-						Commands.listenForFinish(placementCommand[0],
-												 commandOf(() -> m_manipulator.getHand().set(false))));
+			if (!Objects.isNull(placementCommand[0])) {
+				if (placementCommand[0].isRunning()) {
+					Scheduler.getInstance().add(
+							Commands.listenForFinish(placementCommand[0],
+									commandOf(() -> m_manipulator.getHand().set(false))));
+
+				} else {
+					m_manipulator.getHand().set(false);
+				}
 			}
 
 			if (!m_controller.getRawButton(8)) {
