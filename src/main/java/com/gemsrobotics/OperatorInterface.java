@@ -218,14 +218,13 @@ public final class OperatorInterface {
 					Scheduler.getInstance().add(
 							Commands.listenForFinish(placementCommand[0],
 									commandOf(() -> m_manipulator.getHand().set(false))));
-
 				} else {
 					m_manipulator.getHand().set(false);
 				}
-			}
 
-			if (!m_controller.getRawButton(8)) {
-				m_lift.setPosition(Lift.Position.BOTTOM);
+				if (!m_controller.getRawButton(8)) {
+					m_lift.setPosition(Lift.Position.BOTTOM);
+				}
 			}
 		}));
 	}
