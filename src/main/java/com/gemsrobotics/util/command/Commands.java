@@ -38,7 +38,7 @@ public final class Commands {
 	 * Generally reduces top-level clutter.
 	 * @param actions The {@link Command}s to be made into a command group
 	 */
-	public static CommandGroup autonOf(final Command... actions) {
+	public static CommandGroup commandGroupOf(final Command... actions) {
 		return new CommandGroup() {
 			{
 				Arrays.asList(actions).forEach(this::addSequential);
@@ -47,8 +47,8 @@ public final class Commands {
 	}
 
 	// just a compatibility modifier
-	public static CommandGroup autonOf(final List<Command> actions) {
-		return autonOf(actions.toArray(new Command[0]));
+	public static CommandGroup commandGroupOf(final List<Command> actions) {
+		return commandGroupOf(actions.toArray(new Command[0]));
 	}
 
 	/**

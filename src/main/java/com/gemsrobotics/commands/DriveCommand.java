@@ -1,12 +1,15 @@
 package com.gemsrobotics.commands;
 
+import com.gemsrobotics.Config;
 import com.gemsrobotics.OperatorInterface;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive.Side;
+import com.gemsrobotics.subsystems.drive.DriveCommandConfig;
 import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.camera.Limelight;
 import com.gemsrobotics.util.joy.Gemstick;
 import com.gemsrobotics.util.joy.Gemstick.Lens;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -34,6 +37,8 @@ public class DriveCommand extends Command {
 	private final MyAHRS m_ahrs;
 	private final SendableChooser<Boolean> m_toggler;
 
+	private final DriveCommandConfig m_cfg;
+
 	private DistanceFollower m_followerLeft, m_followerRight;
 	private boolean m_isFollowingTrajectory, m_isApproachingLast;
 
@@ -60,6 +65,8 @@ public class DriveCommand extends Command {
 		final var trajectoryVars = m_chassis.getLocals().getPIDFVA();
 		trajectoryVars.configure(m_followerLeft);
 		trajectoryVars.configure(m_followerRight);
+
+		m_cfg = Config.getConfig("driveCommand").to(DriveCommandConfig.class);
 	}
 
 	private void setTrajectories(
@@ -129,9 +136,16 @@ public class DriveCommand extends Command {
 				rotationalPower =  m_wheel.get(Lens.X);
 			}
 
-			if (isSlowableArea() && m_controller.getPOV() != -1) {
+			if (DriverStation.getInstance().isAutonomous() || (isSlowableArea() && m_controller.getPOV() != -1)) {
+				final var previousPower = linearPower;
 				final var area = m_limelight.getArea();
-				linearPower = min(0.25 + 0.75 * max(((area - 6) / -5.5), 0), linearPower);
+
+				if (area > m_cfg.stopOverdriveThreshold) {
+					linearPower = min(0, previousPower);
+				} else {
+					final var scalingFactor = max(((area - m_cfg.endRampArea) / m_cfg.getDivisor()), 0);
+					linearPower = min(m_cfg.getRampingRange() * scalingFactor + m_cfg.minSpeed, previousPower);
+				}
 			}
 
 			m_chassis.curvatureDrive(

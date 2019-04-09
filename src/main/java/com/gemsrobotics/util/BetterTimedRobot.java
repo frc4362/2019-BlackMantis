@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.gemsrobotics.util.joy.Gemstick;
 
-import static com.gemsrobotics.util.command.Commands.autonOf;
+import static com.gemsrobotics.util.command.Commands.commandGroupOf;
 
 /**
  * Wrapper class that works with a subclass to provide important functionality
@@ -102,7 +102,7 @@ public abstract class BetterTimedRobot extends TimedRobot {
 				new Wait(DelayedAutonFactory.getAppropriateDelay()) {
 					@Override
 					public void end() {
-						final Command auton = autonOf(autonCommand, new Wait(15000));
+						final Command auton = Commands.commandGroupOf(autonCommand, new Wait(15000));
 						Scheduler.getInstance().add(auton);
 					}
 				}

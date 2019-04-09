@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.buttons.Button;
-import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.buttons.POVButton;
 import edu.wpi.first.wpilibj.buttons.Trigger;
 import edu.wpi.first.wpilibj.command.Command;
@@ -113,6 +112,7 @@ public final class OperatorInterface {
 		final Runnable intakeNeutralizer = () ->
 			  hw.getManipulator().setSetSpeed(RunMode.NEUTRAL);
 
+		final var limelight = hw.getLimelight();
 		final var transmission = hw.getChassis().getTransmission();
 		m_manipulator = hw.getManipulator();
 		m_inventory = hw.getInventory();
@@ -140,10 +140,7 @@ public final class OperatorInterface {
 		armButton.whenReleased(() ->
 		    m_manipulator.getArm().set(false));
 
-		final var autoPickupSequence = new AutoPickupCommand(
-				m_manipulator,
-				Hardware.getInstance().getLimelight()
-		);
+		final var autoPickupSequence = new AutoPickupCommand(m_manipulator, limelight);
 
 		autoPickupButton.whenPressed(autoPickupSequence);
 		autoPickupButton.whenReleased(commandOf(() -> {
@@ -155,7 +152,7 @@ public final class OperatorInterface {
 			autoPickupSequence.cancel();
 		}));
 
-		final var autoPlaceFactory = new AutoPlaceFactory(m_lift, m_manipulator);
+		final var autoPlaceFactory = new AutoPlaceFactory(m_lift, m_manipulator, limelight);
 
 		cargoHeightButton.whenPressed(commandOf(() ->
 			m_lift.setPosition(Lift.Position.CARGO_SHIP)));
@@ -190,6 +187,7 @@ public final class OperatorInterface {
 		button.whenPressed(commandOf(() -> {
 			switch (m_inventory.getCurrentPiece()) {
 				case PANEL:
+					// manual lift height setpoint override
 					if (m_controller.getRawButton(8)) {
 						m_lift.setPosition(panelPosition);
 						placementCommand[0] = null;
@@ -213,17 +211,21 @@ public final class OperatorInterface {
 		}));
 
 		button.whenReleased(commandOf(() -> {
-			if (!Objects.isNull(placementCommand[0])) {
-				if (placementCommand[0].isRunning()) {
-					Scheduler.getInstance().add(
-							Commands.listenForFinish(placementCommand[0],
-									commandOf(() -> m_manipulator.getHand().set(false))));
-				} else {
-					m_manipulator.getHand().set(false);
-				}
+			final Runnable reset = () -> {
+				m_manipulator.getHand().set(false);
 
 				if (!m_controller.getRawButton(8)) {
 					m_lift.setPosition(Lift.Position.BOTTOM);
+				}
+			};
+
+			if (!Objects.isNull(placementCommand[0])) {
+				// queues opening the hand
+				if (placementCommand[0].isRunning()) {
+					Scheduler.getInstance().add(
+							Commands.listenForFinish(placementCommand[0], commandOf(reset)));
+				} else {
+					reset.run();
 				}
 			}
 		}));
