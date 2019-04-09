@@ -1,0 +1,11 @@
+minSpeed = 0.25
+startRampArea = 0.5
+endRampArea = 6.0
+
+slowdownCloseThreshold = 1.5
+slowdownExtendThreshold = 17.0
+slowdownOpenThreshold = 29.0
+slowdownResetThreshold = 13.0
+slowdownPickupThreshold = 20.0
+
+stopOverdriveThreshold = 30.0
