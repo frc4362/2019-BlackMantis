@@ -5,12 +5,12 @@ import com.gemsrobotics.OperatorInterface;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive.Side;
 import com.gemsrobotics.subsystems.drive.DriveCommandConfig;
+import com.gemsrobotics.util.DualTransmission;
 import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.camera.Limelight;
 import com.gemsrobotics.util.joy.Gemstick;
 import com.gemsrobotics.util.joy.Gemstick.Lens;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import jaci.pathfinder.Pathfinder;
@@ -32,7 +32,6 @@ public class DriveCommand extends Command {
 
 	private final DifferentialDrive m_chassis;
 	private final Gemstick m_stick, m_wheel;
-	private final XboxController m_controller;
 	private final Limelight m_limelight;
 	private final MyAHRS m_ahrs;
 	private final SendableChooser<Boolean> m_toggler;
@@ -53,7 +52,6 @@ public class DriveCommand extends Command {
 		m_ahrs = chassis.getAHRS();
 		m_stick = oi.getStickLeft();
 		m_wheel = oi.getStickRight();
-		m_controller = oi.getController();
 		m_limelight = limelight;
 
 		m_isFollowingTrajectory = false;
@@ -136,15 +134,22 @@ public class DriveCommand extends Command {
 				rotationalPower =  m_wheel.get(Lens.X);
 			}
 
-			if (DriverStation.getInstance().isAutonomous() || (isSlowableArea() && m_controller.getPOV() != -1)) {
+			if (DriverStation.getInstance().isAutonomous() || (isAttemptingVision() && isSlowableArea())) {
 				final var previousPower = linearPower;
 				final var area = m_limelight.getArea();
 
 				if (area > m_cfg.stopOverdriveThreshold) {
 					linearPower = min(0, previousPower);
 				} else {
-					final var scalingFactor = max(((area - m_cfg.endRampArea) / m_cfg.getDivisor()), 0);
-					linearPower = min(m_cfg.getRampingRange() * scalingFactor + m_cfg.minSpeed, previousPower);
+					if (m_chassis.getTransmission().get() == DualTransmission.Gear.HIGH) {
+						final double highStartArea = 0.4;
+						final double highEndArea = 8;
+						final var scalingFactor = max(((area - highEndArea) / (highStartArea - highEndArea)), 0);
+						linearPower = min(m_cfg.getRampingRange() * scalingFactor + 0, previousPower);
+					} else {
+						final var scalingFactor = max(((area - m_cfg.endRampArea) / m_cfg.getDivisor()), 0);
+						linearPower = min(m_cfg.getRampingRange() * scalingFactor + m_cfg.minSpeed, previousPower);
+					}
 				}
 			}
 

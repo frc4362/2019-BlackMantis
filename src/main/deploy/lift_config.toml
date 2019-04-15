@@ -4,7 +4,7 @@ rotationsTop = 153.0
 rotationsBottom = 0.0
 
 [pidVars]
-kP = 0.55
+kP = 1.0
 kI = 0.0
 kD = 0.0
 kF = 0.0

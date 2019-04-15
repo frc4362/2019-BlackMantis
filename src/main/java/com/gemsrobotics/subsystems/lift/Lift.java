@@ -1,5 +1,6 @@
 package com.gemsrobotics.subsystems.lift;
 
+import com.revrobotics.CANDigitalInput;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.ControlType;
@@ -27,6 +28,7 @@ public class Lift implements Sendable {
 		CARGO_2(0.613),
 		CARGO_1(0.264),
 		CARGO_SHIP(0.4454),
+		STAGE1_RETRACT_DISTANCE(0.05),
 		BOTTOM(0.0);
 
 		private static double TOP_INCHES = 79.5;
@@ -123,6 +125,10 @@ public class Lift implements Sendable {
 		return abs(getPosition() - m_setpoint) < STOP_THRESHOLD;
 	}
 
+	public double heightRotations(final Position position) {
+		return position.percent * m_liftConfig.totalRotations();
+	}
+
 	@Override
 	public String getName() {
 		return m_name;
@@ -174,11 +180,11 @@ public class Lift implements Sendable {
 
 		@Override
 		public void execute() {
-			final double p = prefs.getDouble("p", 999);
-			final double i = prefs.getDouble("i", 999);
-			final double d = prefs.getDouble("d", 999);
-			final double f = prefs.getDouble("f", 999);
-			final double setpoint = prefs.getDouble("setpoint", 999);
+			final double p = prefs.getDouble("p", 0);
+			final double i = prefs.getDouble("i", 0);
+			final double d = prefs.getDouble("d", 0);
+			final double f = prefs.getDouble("f", 0);
+			final double setpoint = prefs.getDouble("setpoint", 0);
 
 			SmartDashboard.putNumber("Lift Setpoint Rots",
 					setpoint * m_lift.m_liftConfig.totalRotations());

@@ -1,5 +1,6 @@
 package com.gemsrobotics.subsystems.manipulator;
 
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -12,6 +13,7 @@ public class Manipulator {
 
 	private static final int NO_SENSOR_SETTING_ID = 0;
 
+	private final WPI_TalonSRX m_stage1;
 	private final CANSparkMax m_stage2Master, m_stage2Slave;
 	private final Solenoid m_arm, m_hand;
 
@@ -27,6 +29,9 @@ public class Manipulator {
 		m_stage2Slave.follow(m_stage2Master, true);
 		disableEncoder(m_stage2Slave);
 
+		// TODO move this to a config file
+		m_stage1 = new WPI_TalonSRX(20);
+
 		m_arm = new Solenoid(config.placementPort);
 		m_hand = new Solenoid(config.longPlacePort);
 
@@ -38,15 +43,18 @@ public class Manipulator {
 	}
 
 	public enum RunMode {
-		INTAKING(-1.0),
-		EXHAUSTING(0.45),
-		NEUTRAL(-0.25),
-		HALTED(0.0);
+		INTAKING(-1.0, -0.7),
+		INTAKING_RAISED(-1.0, 0.0),
+		EXHAUSTING(0.45, 0.7),
+		EXHAUSTING_RAISED(0.45, 0.0),
+		NEUTRAL(-0.25, 0.0),
+		HALTED(0.0, 0.0);
 
-		private final double speed;
+		private final double speed2, speed1;
 
-		RunMode(final double s) {
-			speed = s;
+		RunMode(final double s, final double s1) {
+			speed2 = s;
+			speed1 = s1;
 		}
 	}
 
@@ -54,13 +62,14 @@ public class Manipulator {
 		HOLDING, SHORT_PLACE, LONG_PICKUP, LONG_PLACED
 	}
 
-	private void setSpeed(final double speed) {
-		m_stage2Master.set(speed);
+	private void setSpeed(final double speed2, final double speed1) {
+		m_stage1.set(speed1);
+		m_stage2Master.set(speed2);
 	}
 
 	public void setSetSpeed(final RunMode mode) {
 		m_intakeSetpoint = mode;
-		setSpeed(mode.speed);
+		setSpeed(mode.speed2, mode.speed1);
 	}
 
 	public void set(final PlacementState state) {

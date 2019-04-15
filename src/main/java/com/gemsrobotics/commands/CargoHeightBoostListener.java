@@ -37,8 +37,8 @@ public class CargoHeightBoostListener extends Command {
 
 		if (!m_hadCargoLast
 			&& hasCargo
-			&& m_intake.getCurrentRunMode() == Manipulator.RunMode.INTAKING
-			&& m_lift.getSetPosition() == Lift.Position.BOTTOM
+			&& (m_intake.getCurrentRunMode() == Manipulator.RunMode.INTAKING)
+			&& m_lift.getSetPosition().percent == 0.0
 		) {
 			m_ticksToDelay = RAISE_DELAY_MS / 20;
 		}

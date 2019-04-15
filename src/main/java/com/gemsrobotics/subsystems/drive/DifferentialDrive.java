@@ -3,6 +3,7 @@ package com.gemsrobotics.subsystems.drive;
 import com.gemsrobotics.OperatorInterface;
 import com.gemsrobotics.commands.DriveCommand;
 import com.gemsrobotics.commands.RobotStateEstimator;
+import com.gemsrobotics.commands.ShiftScheduler;
 import com.gemsrobotics.util.DualTransmission;
 import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.PIDF;
@@ -48,6 +49,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	private final RobotState m_state;
 	private final List<CANSparkMax> m_motors;
 	private final MyAHRS m_ahrs;
+	private final ShiftScheduler m_shiftScheduler;
 
 	private DriveCommand m_driveCommand;
 	private boolean m_useVelocityControl;
@@ -74,6 +76,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		m_kinematics = new Kinematics(m_localizations, this);
 		m_state = new RobotState(this);
 		m_robotStateEstimator = new RobotStateEstimator(this);
+		m_shiftScheduler = new ShiftScheduler(this);
 
 		if (ports.length != 4) {
 			throw new RuntimeException("Wrong number of ports!");
@@ -112,19 +115,8 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		final var leftMotor = getMotor(Side.LEFT);
 		final var rightMotor = getMotor(Side.RIGHT);
 
-		if (m_useVelocityControl) {
-			final double maxRPM = m_transmission.get().maxRPM,
-					speedLeft = leftPower * maxRPM,
-					speedRight = rightPower * maxRPM;
-
-			leftMotor.getPIDController().setReference(
-					speedLeft, ControlType.kVelocity);
-			rightMotor.getPIDController().setReference(
-					-speedRight, ControlType.kVelocity);
-		} else {
-			leftMotor.set(leftPower);
-			rightMotor.set(-rightPower);
-		}
+		leftMotor.set(leftPower);
+		rightMotor.set(-rightPower);
 	}
 
 	private static final double LIMIT = 1.0;
@@ -241,11 +233,15 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	}
 
 	public Command getDriveCommand() {
-		return Objects.requireNonNullElse(m_driveCommand, Commands.nullCommand());
+		return m_driveCommand;
 	}
 
 	public RobotStateEstimator getStateEstimator() {
 		return m_robotStateEstimator;
+	}
+
+	public ShiftScheduler getShiftScheduler() {
+		return m_shiftScheduler;
 	}
 
 	public enum Side {

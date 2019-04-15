@@ -1,8 +1,7 @@
 package com.gemsrobotics;
 
 import com.gemsrobotics.commands.*;
-import com.gemsrobotics.subsystems.drive.DifferentialDrive;
-import com.gemsrobotics.util.DualTransmission;
+import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.camera.Limelight.LEDMode;
 import com.gemsrobotics.util.camera.Limelight.CameraMode;
 import com.gemsrobotics.util.command.loggers.LimelightLogger;
@@ -44,7 +43,7 @@ public class Robot extends TimedRobot {
 		limelight.setCameraMode(CameraMode.CV);
 
 		final var chassis = m_hardware.getChassis();
-		chassis.getTransmission().set(DualTransmission.Gear.LOW);
+		chassis.getTransmission().set(Gear.LOW);
 		chassis.configureDriveCommand(limelight, m_oi, driveTrainToggler);
 	}
 
@@ -55,7 +54,7 @@ public class Robot extends TimedRobot {
 
 		m_hardware.getPTO().disengage();
 		m_hardware.getBackLegs().set(DoubleSolenoid.Value.kForward);
-		m_hardware.getFrontLegs().set(false);
+		m_hardware.getStage1Solenoid().set(false);
 
 		final var controller = m_oi.getController();
 
@@ -76,38 +75,30 @@ public class Robot extends TimedRobot {
 		Scheduler.getInstance().add(chassis.getStateEstimator());
 		Scheduler.getInstance().add(chassis.getState().makeLogger());
 		Scheduler.getInstance().add(chassis.getDriveCommand());
-
-		final var latListen = new VisionAdjuster(
+		// TODO this
+//		Scheduler.getInstance().add(new ShiftScheduler(chassis));
+		Scheduler.getInstance().add(m_hardware.getInventory().makeLogger());
+		Scheduler.getInstance().add(new LEDListener(
+				m_hardware.getLEDs(),
+				m_oi.getController(),
+				limelight));
+		Scheduler.getInstance().add(new VisionAdjuster(
 				m_hardware.getLateralAdjuster(),
 				limelight,
 				m_hardware.getInventory(),
-				m_oi.getController());
-
-		Scheduler.getInstance().add(m_hardware.getInventory().makeLogger());
-		Scheduler.getInstance().add(new ShifterListener(m_hardware.getLEDs(), chassis.getTransmission()));
-		Scheduler.getInstance().add(latListen);
-
-		Scheduler.getInstance().add(new CargoHeightBoostListener(
-				lift,
-				m_hardware.getManipulator(),
-				m_hardware.getInventory()));
-	}
-
-	@Override
-	public void teleopInit() {
-		Scheduler.getInstance().removeAll();
-		initDriverControl();
-	}
-
-	@Override
-	public void teleopPeriodic() {
-		Scheduler.getInstance().run();
+				m_oi.getController()));
+		// TODO bring this back
+//		Scheduler.getInstance().add(new CargoHeightBoostListener(
+//				lift,
+//				m_hardware.getManipulator(),
+//				m_hardware.getInventory()));
 	}
 
 	@Override
 	public void autonomousInit() {
 		Scheduler.getInstance().removeAll();
 		initDriverControl();
+		m_hardware.getLimelight().setLEDMode(LEDMode.ON);
 	}
 
 	@Override
@@ -116,7 +107,20 @@ public class Robot extends TimedRobot {
 	}
 
 	@Override
+	public void teleopInit() {
+		Scheduler.getInstance().removeAll();
+		initDriverControl();
+		m_hardware.getLimelight().setLEDMode(LEDMode.ON);
+	}
+
+	@Override
+	public void teleopPeriodic() {
+		Scheduler.getInstance().run();
+	}
+
+	@Override
 	public void robotPeriodic() {
+		SmartDashboard.putBoolean("HIGH GEAR", m_hardware.getChassis().getTransmission().get() == Gear.HIGH);
 		Hardware.getInstance()
 				.getCompressor()
 				.setClosedLoopControl(m_compressorToggler.getSelected());
@@ -124,9 +128,11 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void disabledInit() {
+		final var idleMode = m_isFieldMatch ? IdleMode.kBrake : IdleMode.kCoast;
+
 		m_hardware.getChassis().getMotors().forEach(motor ->
-			motor.setIdleMode(m_isFieldMatch ? IdleMode.kBrake : IdleMode.kCoast));
-		m_hardware.getLift().setIdleMode(IdleMode.kCoast);
+			motor.setIdleMode(idleMode));
+		m_hardware.getLift().setIdleMode(idleMode);
 		m_hardware.getLimelight().setLEDMode(LEDMode.OFF);
 	}
 }

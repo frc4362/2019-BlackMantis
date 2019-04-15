@@ -3,6 +3,7 @@ package com.gemsrobotics;
 import com.gemsrobotics.commands.AutoPickupCommand;
 import com.gemsrobotics.commands.AutoPlaceFactory;
 import com.gemsrobotics.commands.ClimberRollerListener;
+import com.gemsrobotics.commands.any.Wait;
 import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.lift.Lift;
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
@@ -23,6 +24,9 @@ import edu.wpi.first.wpilibj.command.Scheduler;
 
 import java.util.Objects;
 
+import static com.gemsrobotics.subsystems.inventory.Inventory.GamePiece.CARGO;
+import static com.gemsrobotics.subsystems.inventory.Inventory.GamePiece.PANEL;
+import static com.gemsrobotics.util.command.Commands.commandGroupOf;
 import static com.gemsrobotics.util.command.Commands.commandOf;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -33,6 +37,12 @@ public final class OperatorInterface {
 	private final Lift m_lift;
 	private final Manipulator m_manipulator;
 	private final Inventory m_inventory;
+
+	private AutoPlaceFactory m_factory;
+
+	public AutoPlaceFactory getAutoFactory() {
+		return m_factory;
+	}
 
 	public OperatorInterface(
 			final int portLeft,
@@ -52,10 +62,13 @@ public final class OperatorInterface {
 				exhaustButton = new Gembutton(m_controller, 4),
 				handButton = new Gembutton(m_controller, 5),
 				armButton = new Gembutton(m_controller, 6),
-				hab3FrontLegButton = new Gembutton(m_controller, 3),
 				cargoHeightButton = new Gembutton(m_controller, 7),
-				hab2FrontLegButton = new Gembutton(m_stickRight, 9),
-				hab2BackLegButton = new Gembutton(m_stickRight, 11);
+				frontLegsButton = new Gembutton(m_stickRight, 9),
+				backLegsButton = new Gembutton(m_stickRight, 11),
+				stage1ExtendButton = new Gembutton(m_controller, 2);
+
+		final Gembutton
+				limelightButton = new Gembutton(m_stickRight, 4);
 
 		final POVButton
 				autoPickupButton = new POVButton(m_controller, POVState.W.toDegrees()),
@@ -64,6 +77,14 @@ public final class OperatorInterface {
 				height3Button = new POVButton(m_controller, POVState.N.toDegrees());
 
 		m_rollerListener = new ClimberRollerListener(hw.getRollers(), m_controller);
+
+		stage1ExtendButton.whenPressed(() -> {
+			hw.getStage1Solenoid().set(true);
+		});
+
+		stage1ExtendButton.whenReleased(() -> {
+			hw.getStage1Solenoid().set(false);
+		});
 
 		final Trigger ptoDeployButton = new Trigger() {
 			@Override
@@ -76,7 +97,6 @@ public final class OperatorInterface {
 		ptoDeployButton.whenActive(commandOf(() -> {
 			hw.getPTO().engage();
 			hw.getBackLegs().set(DoubleSolenoid.Value.kReverse);
-			hw.getFrontLegs().set(true);
 			hw.getManipulator().setSetSpeed(RunMode.HALTED);
 			hw.getLateralAdjuster().disable();
 
@@ -85,28 +105,16 @@ public final class OperatorInterface {
 			}
 		}));
 
-		hab3FrontLegButton.whenInactive(commandOf(() -> {
-			hw.getFrontLegs().set(false);
-			hw.getPTO().disengage();
-		}));
-
-		hab2FrontLegButton.whenPressed(commandOf(() -> {
+		frontLegsButton.whenPressed(commandOf(() -> {
 		  	  if (hw.getPTO().isEngaged()) {
-				  hw.getFrontLegs().set(true);
 				  hw.getPTO().disengage();
 			  }
 		}));
 
-		hab2FrontLegButton.whenPressed(() ->
-			  hw.getFrontLegs().set(true));
-
-		hab2FrontLegButton.whenReleased(() ->
-			  hw.getFrontLegs().set(false));
-
-		hab2BackLegButton.whenPressed(() ->
+		backLegsButton.whenPressed(() ->
 		      hw.getBackLegs().set(DoubleSolenoid.Value.kReverse));
 
-		hab2BackLegButton.whenReleased(() ->
+		backLegsButton.whenReleased(() ->
 			  hw.getBackLegs().set(DoubleSolenoid.Value.kForward));
 
 		final Runnable intakeNeutralizer = () ->
@@ -118,17 +126,54 @@ public final class OperatorInterface {
 		m_inventory = hw.getInventory();
 		m_lift = hw.getLift();
 
-		shiftUpButton.whenPressed(() ->
-		    transmission.set(Gear.HIGH));
-		shiftDownButton.whenPressed(() ->
-		    transmission.set(Gear.LOW));
+		// TODO
 
-		intakeButton.whileHeld(() ->
-		    m_manipulator.setSetSpeed(RunMode.INTAKING));
-		intakeButton.whenReleased(intakeNeutralizer);
+//		final var lastLimelightPressTime = new long[] { 0 };
 
-		exhaustButton.whileHeld(() ->
-		    m_manipulator.setSetSpeed(RunMode.EXHAUSTING));
+//		limelightButton.whenPressed(() -> {
+//			Hardware.getInstance().getChassis().getShiftScheduler().disable();
+//
+//				if (System.currentTimeMillis() - lastLimelightPressTime[0] > 1000) {
+//				lastLimelightPressTime[0] = System.currentTimeMillis();
+//				Scheduler.getInstance().add(commandGroupOf(
+//						new Wait(60),
+//						commandOf(() -> transmission.set(Gear.LOW))));
+//			}
+//		});
+//		limelightButton.whenReleased(() -> {
+//			Hardware.getInstance().getChassis().getShiftScheduler().enable();
+//		});
+
+		// TODO manual shift
+//		shiftUpButton.whenPressed(() ->
+//		    transmission.set(Gear.HIGH));
+//		shiftDownButton.whenPressed(() ->
+//		    transmission.set(Gear.LOW));
+
+		final var stage1 = hw.getStage1Solenoid();
+
+		intakeButton.whenPressed(() -> {
+			stage1.set(true);
+			m_manipulator.setSetSpeed(RunMode.INTAKING);
+			// TODO maybe put this back later
+//			if (!(m_lift.getPosition() > m_lift.heightRotations(Lift.Position.STAGE1_RETRACT_DISTANCE))) {
+//				stage1.set(true);
+//			} else {
+//				m_manipulator.setSetSpeed(RunMode.INTAKING_RAISED);
+//			}
+		});
+		intakeButton.whenReleased(() -> {
+			intakeNeutralizer.run();
+			stage1.set(false);
+		});
+
+		exhaustButton.whenPressed(() -> {
+			if (!(m_lift.getPosition() > m_lift.heightRotations(Lift.Position.STAGE1_RETRACT_DISTANCE))) {
+				m_manipulator.setSetSpeed(RunMode.EXHAUSTING);
+			} else {
+				m_manipulator.setSetSpeed(RunMode.EXHAUSTING_RAISED);
+			}
+		});
 		exhaustButton.whenReleased(intakeNeutralizer);
 
 		handButton.whenPressed(() ->
@@ -140,7 +185,7 @@ public final class OperatorInterface {
 		armButton.whenReleased(() ->
 		    m_manipulator.getArm().set(false));
 
-		final var autoPickupSequence = new AutoPickupCommand(m_manipulator, limelight);
+		final var autoPickupSequence = new AutoPickupCommand(m_manipulator, limelight, hw.getChassis());
 
 		autoPickupButton.whenPressed(autoPickupSequence);
 		autoPickupButton.whenReleased(commandOf(() -> {
@@ -154,8 +199,13 @@ public final class OperatorInterface {
 
 		final var autoPlaceFactory = new AutoPlaceFactory(m_lift, m_manipulator, limelight);
 
-		cargoHeightButton.whenPressed(commandOf(() ->
-			m_lift.setPosition(Lift.Position.CARGO_SHIP)));
+		cargoHeightButton.whenPressed(commandOf(() -> {
+			if (m_controller.getRawButton(1) || m_controller.getRawButton(2)) {
+				m_lift.setPosition(Lift.Position.CARGO_1);
+			} else {
+				m_lift.setPosition(Lift.Position.CARGO_SHIP);
+			}
+		}));
 
 		generatePlacementBindings(
 				autoPlaceFactory,
@@ -182,29 +232,35 @@ public final class OperatorInterface {
 			final Lift.Position panelPosition,
 			final Lift.Position cargoPosition
 	) {
-		final Command[] placementCommand = { null };
+		final Command[] panelPlacementCommand = { null };
+		final boolean[] isPressedInAuton = { false };
 
 		button.whenPressed(commandOf(() -> {
-			switch (m_inventory.getCurrentPiece()) {
+			//TODOp
+			final var piece = m_controller.getRawButton(3) ? CARGO : PANEL;
+			isPressedInAuton[0] = DriverStation.getInstance().isAutonomous();
+
+			switch (piece) {
 				case PANEL:
 					// manual lift height setpoint override
 					if (m_controller.getRawButton(8)) {
 						m_lift.setPosition(panelPosition);
-						placementCommand[0] = null;
+						panelPlacementCommand[0] = null;
 					} else {
-						placementCommand[0] = autoPlaceFactory.makeAutoPlace(
+						panelPlacementCommand[0] = autoPlaceFactory.makeAutoPlace(
 								panelPosition,
-								false);
+								false,
+								m_controller);
 
-						if (!Objects.isNull(placementCommand[0])) {
-							Scheduler.getInstance().add(placementCommand[0]);
+						if (!Objects.isNull(panelPlacementCommand[0])) {
+							Scheduler.getInstance().add(panelPlacementCommand[0]);
 						}
 					}
 					break;
 				case CARGO:
+					panelPlacementCommand[0] = null;
 					m_lift.setPosition(cargoPosition);
 					break;
-				case NONE:
 				default:
 					break;
 			}
@@ -214,16 +270,16 @@ public final class OperatorInterface {
 			final Runnable reset = () -> {
 				m_manipulator.getHand().set(false);
 
-				if (!m_controller.getRawButton(8)) {
+				if (!m_controller.getRawButton(8) && !isPressedInAuton[0]) {
 					m_lift.setPosition(Lift.Position.BOTTOM);
 				}
 			};
 
-			if (!Objects.isNull(placementCommand[0])) {
+			if (!Objects.isNull(panelPlacementCommand[0])) {
 				// queues opening the hand
-				if (placementCommand[0].isRunning()) {
+				if (panelPlacementCommand[0].isRunning()) {
 					Scheduler.getInstance().add(
-							Commands.listenForFinish(placementCommand[0], commandOf(reset)));
+							Commands.listenForFinish(panelPlacementCommand[0], commandOf(reset)));
 				} else {
 					reset.run();
 				}

@@ -31,16 +31,15 @@ public abstract class Inventory {
 	private static class InventoryLogger extends Command {
 		private final Inventory m_inventory;
 
+		@SuppressWarnings("WeakerAccess")
 		public InventoryLogger(final Inventory inventory) {
 			m_inventory = inventory;
 		}
 
 		@Override
 		public void execute() {
-			SmartDashboard.putString("Current Game Piece",
-					m_inventory.getCurrentPiece().toString());
-			SmartDashboard.putBoolean("Cargo Raw Reading",
-					m_inventory.hasCargo());
+			SmartDashboard.putString("Current Game Piece", m_inventory.getCurrentPiece().toString());
+			SmartDashboard.putBoolean("Cargo Raw Reading", m_inventory.hasCargo());
 		}
 
 		@Override

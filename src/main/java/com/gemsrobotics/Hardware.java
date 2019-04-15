@@ -7,6 +7,7 @@ import com.gemsrobotics.subsystems.inventory.DumbInventory;
 import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.subsystems.drive.DrivePorts;
+import com.gemsrobotics.subsystems.inventory.ManualInventory;
 import com.gemsrobotics.subsystems.inventory.UltrasonicInventoryConfig;
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
 import com.gemsrobotics.subsystems.manipulator.ManipulatorConfig;
@@ -65,6 +66,7 @@ public class Hardware {
 
 		final var ultraCfg = inventoryCfg.to(UltrasonicInventoryConfig.class);
 		m_inventory = new DumbInventory(ultraCfg);
+//		m_inventory = new ManualInventory();
 		m_leds = new Relay(ledsCfg.getLong("port").intValue());
 		m_limelight = new Limelight();
 		m_compressor = new Compressor();
@@ -137,7 +139,7 @@ public class Hardware {
 		return m_legsBack;
 	}
 
-	public Solenoid getFrontLegs() {
+	public Solenoid getStage1Solenoid() {
 		return m_legsFront;
 	}
 
