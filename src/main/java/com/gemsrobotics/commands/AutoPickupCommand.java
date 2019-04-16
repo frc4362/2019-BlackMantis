@@ -36,7 +36,7 @@ public class AutoPickupCommand extends Command {
         m_manipulator = manipulator;
         m_limelight = limelight;
         m_driveTrain = chassis;
-        // TODO
+        // we'll just carry this technical debt through the rest of the season
         m_cfg = Config.getConfig("driveCommand").to(DriveCommandConfig.class);
     }
 

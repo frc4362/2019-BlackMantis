@@ -79,17 +79,17 @@ public class Robot extends TimedRobot {
 		Scheduler.getInstance().add(new LEDListener(
 				m_hardware.getLEDs(),
 				m_oi.getController(),
-				limelight));
+				limelight,
+				m_hardware.getInventory()));
 		Scheduler.getInstance().add(new VisionAdjuster(
 				m_hardware.getLateralAdjuster(),
 				limelight,
 				m_hardware.getInventory(),
 				m_oi.getController()));
-		// TODO bring this back
-//		Scheduler.getInstance().add(new CargoHeightBoostListener(
-//				lift,
-//				m_hardware.getManipulator(),
-//				m_hardware.getInventory()));
+		Scheduler.getInstance().add(new CargoHeightBoostListener(
+				lift,
+				m_hardware.getManipulator(),
+				m_hardware.getInventory()));
 	}
 
 	@Override

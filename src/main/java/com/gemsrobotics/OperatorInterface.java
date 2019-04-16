@@ -3,12 +3,9 @@ package com.gemsrobotics;
 import com.gemsrobotics.commands.AutoPickupCommand;
 import com.gemsrobotics.commands.AutoPlaceFactory;
 import com.gemsrobotics.commands.ClimberRollerListener;
-import com.gemsrobotics.commands.any.Wait;
-import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.lift.Lift;
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
 import com.gemsrobotics.subsystems.manipulator.Manipulator.RunMode;
-import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.command.Commands;
 import com.gemsrobotics.util.joy.Gembutton;
 import com.gemsrobotics.util.joy.Gemstick;
@@ -26,7 +23,6 @@ import java.util.Objects;
 
 import static com.gemsrobotics.subsystems.inventory.Inventory.GamePiece.CARGO;
 import static com.gemsrobotics.subsystems.inventory.Inventory.GamePiece.PANEL;
-import static com.gemsrobotics.util.command.Commands.commandGroupOf;
 import static com.gemsrobotics.util.command.Commands.commandOf;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -36,7 +32,6 @@ public final class OperatorInterface {
 	private final ClimberRollerListener m_rollerListener;
 	private final Lift m_lift;
 	private final Manipulator m_manipulator;
-	private final Inventory m_inventory;
 
 	private AutoPlaceFactory m_factory;
 
@@ -78,13 +73,10 @@ public final class OperatorInterface {
 
 		m_rollerListener = new ClimberRollerListener(hw.getRollers(), m_controller);
 
-		stage1ExtendButton.whenPressed(() -> {
-			hw.getStage1Solenoid().set(true);
-		});
-
-		stage1ExtendButton.whenReleased(() -> {
-			hw.getStage1Solenoid().set(false);
-		});
+		stage1ExtendButton.whenPressed(() ->
+			hw.getStage1Solenoid().set(true));
+		stage1ExtendButton.whenReleased(() ->
+			hw.getStage1Solenoid().set(false));
 
 		final Trigger ptoDeployButton = new Trigger() {
 			@Override
@@ -122,45 +114,20 @@ public final class OperatorInterface {
 
 		final var limelight = hw.getLimelight();
 		final var transmission = hw.getChassis().getTransmission();
+		final var inventory = hw.getInventory();
+
 		m_manipulator = hw.getManipulator();
-		m_inventory = hw.getInventory();
 		m_lift = hw.getLift();
-
-		// TODO
-
-//		final var lastLimelightPressTime = new long[] { 0 };
-
-//		limelightButton.whenPressed(() -> {
-//			Hardware.getInstance().getChassis().getShiftScheduler().disable();
-//
-//				if (System.currentTimeMillis() - lastLimelightPressTime[0] > 1000) {
-//				lastLimelightPressTime[0] = System.currentTimeMillis();
-//				Scheduler.getInstance().add(commandGroupOf(
-//						new Wait(60),
-//						commandOf(() -> transmission.set(Gear.LOW))));
-//			}
-//		});
-//		limelightButton.whenReleased(() -> {
-//			Hardware.getInstance().getChassis().getShiftScheduler().enable();
-//		});
-
-		// TODO manual shift
-//		shiftUpButton.whenPressed(() ->
-//		    transmission.set(Gear.HIGH));
-//		shiftDownButton.whenPressed(() ->
-//		    transmission.set(Gear.LOW));
 
 		final var stage1 = hw.getStage1Solenoid();
 
 		intakeButton.whenPressed(() -> {
-			stage1.set(true);
-			m_manipulator.setSetSpeed(RunMode.INTAKING);
-			// TODO maybe put this back later
-//			if (!(m_lift.getPosition() > m_lift.heightRotations(Lift.Position.STAGE1_RETRACT_DISTANCE))) {
-//				stage1.set(true);
-//			} else {
-//				m_manipulator.setSetSpeed(RunMode.INTAKING_RAISED);
-//			}
+			if (m_lift.getPosition() > m_lift.heightRotations(Lift.Position.STAGE1_RETRACT_DISTANCE)) {
+				m_manipulator.setSetSpeed(RunMode.INTAKING_RAISED);
+			} else {
+				stage1.set(true);
+				m_manipulator.setSetSpeed(RunMode.INTAKING);
+			}
 		});
 		intakeButton.whenReleased(() -> {
 			intakeNeutralizer.run();

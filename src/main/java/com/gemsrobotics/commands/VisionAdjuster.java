@@ -45,7 +45,7 @@ public class VisionAdjuster extends Command {
 		if (isOverriding) {
 			m_adjuster.drive(driveVal * -m_adjuster.kLatVolts);
 		} else {
-			final var hasCargo = m_controller.getRawButton(3); //m_inventory.getCurrentPiece() == Inventory.GamePiece.CARGO;
+			final var hasCargo = m_inventory.getCurrentPiece() == Inventory.GamePiece.CARGO;
 
 			if (m_controller.getRawButton(1)) {
 				m_adjuster.setPercent(0.5);

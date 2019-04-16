@@ -3,7 +3,6 @@ package com.gemsrobotics;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjuster;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjusterConfig;
-import com.gemsrobotics.subsystems.inventory.DumbInventory;
 import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.subsystems.drive.DrivePorts;
@@ -20,7 +19,6 @@ import com.gemsrobotics.util.camera.Limelight;
 import edu.wpi.first.wpilibj.*;
 import com.moandjiezana.toml.Toml;
 
-import java.util.List;
 import java.util.Objects;
 
 import static com.gemsrobotics.Config.getConfig;
@@ -65,8 +63,7 @@ public class Hardware {
 		final var shifterPort = shifterCfg.getLong("port");
 
 		final var ultraCfg = inventoryCfg.to(UltrasonicInventoryConfig.class);
-		m_inventory = new DumbInventory(ultraCfg);
-//		m_inventory = new ManualInventory();
+		m_inventory = new ManualInventory();
 		m_leds = new Relay(ledsCfg.getLong("port").intValue());
 		m_limelight = new Limelight();
 		m_compressor = new Compressor();
