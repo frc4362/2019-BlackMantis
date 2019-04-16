@@ -25,7 +25,6 @@ public class ShiftScheduler extends ToggleableCommand {
 		final var shouldShiftHigh = isOverSpeed(.90 * PEAK_RPM);
 		final var shouldShiftLow = !isOverSpeed(.80 * PEAK_RPM);
 
-		// TODO add it back
 		if (currentGear == LOW && shouldShiftHigh) {
 			m_transmission.set(HIGH);
 		} else if (currentGear == HIGH && shouldShiftLow) {

@@ -8,21 +8,17 @@ import com.gemsrobotics.util.DualTransmission;
 import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.PIDF;
 import com.gemsrobotics.util.camera.Limelight;
-import com.gemsrobotics.util.command.Commands;
 import com.gemsrobotics.util.motion.Pose;
 import com.gemsrobotics.util.motion.Rotation;
 import com.gemsrobotics.util.motion.Twist;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.ControlType;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.Sendable;
 import edu.wpi.first.wpilibj.Solenoid;
-import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import jaci.pathfinder.PathfinderFRC;
 import jaci.pathfinder.Trajectory;
 
@@ -52,7 +48,6 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	private final ShiftScheduler m_shiftScheduler;
 
 	private DriveCommand m_driveCommand;
-	private boolean m_useVelocityControl;
 	private double m_accumulator;
 	private String m_name;
 
@@ -98,7 +93,6 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 			controller.setOutputRange(-1.0, +1.0);
 		});
 
-		m_useVelocityControl = useVelocityControl;
 		m_accumulator = 0.0;
 	}
 
@@ -111,18 +105,18 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	}
 
 	public void drive(final double leftPower, final double rightPower) {
-		SmartDashboard.putString("drive state", "drive started");
-		final var leftMotor = getMotor(Side.LEFT);
-		final var rightMotor = getMotor(Side.RIGHT);
-
-		leftMotor.set(leftPower);
-		rightMotor.set(-rightPower);
+		getMotor(Side.LEFT).set(leftPower);
+		getMotor(Side.RIGHT).set(-rightPower);
 	}
 
 	private static final double LIMIT = 1.0;
 
 	private static double limit(final double v) {
 		return Math.abs(v) < LIMIT ? v : LIMIT * Math.signum(v);
+	}
+
+	public void drive(final DrivePower velocity) {
+		curvatureDrive(velocity.linear(), velocity.angular(), false);
 	}
 
 	public void curvatureDrive(
@@ -174,22 +168,12 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		drive(leftPower, rightPower);
 	}
 
-	public Velocity getSpeeds() {
-		return new Velocity(
-				rpm2InPerS(getMotor(Side.LEFT).getEncoder().getVelocity()),
-				rpm2InPerS(getMotor(Side.RIGHT).getEncoder().getVelocity()));
-	}
-
 	public void stopMotors() {
 		m_motors.forEach(CANSparkMax::stopMotor);
 	}
 
 	public List<CANSparkMax> getMotors() {
 		return m_motors;
-	}
-
-	public CANSparkMax getMotorLeft() {
-		return m_motors.get(0);
 	}
 
 	public CANSparkMax getMotor(final Side side) {
@@ -232,7 +216,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		return m_ahrs;
 	}
 
-	public Command getDriveCommand() {
+	public DriveCommand getDriveCommand() {
 		return m_driveCommand;
 	}
 
@@ -309,10 +293,10 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		}
 	}
 
-	public class Velocity {
+	public static class DrivePower {
 		private final double linear, angular;
 
-		private Velocity(final double l, final double a) {
+		private DrivePower(final double l, final double a) {
 			linear = l;
 			angular = a;
 		}
@@ -334,15 +318,15 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		}
 	}
 
-	public Velocity wheelVelocity(final double l, final double r) {
+	public DrivePower wheelVelocity(final double l, final double r) {
 		final double linear = (m_localizations.wheelRadius() * (l + r)) / 2.0,
 				angular = m_localizations.wheelRadius() * (r - l) / m_localizations.width;
 
-		return new Velocity(linear, angular);
+		return new DrivePower(linear, angular);
 	}
 
-	public Velocity driveVelocity(final double linear, final double angular) {
-		return new Velocity(linear, angular);
+	public static DrivePower driveVelocity(final double linear, final double angular) {
+		return new DrivePower(linear, angular);
 	}
 
 	public static class Kinematics {
@@ -395,7 +379,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 			return currentPose.transform(Pose.exp(forwardKinematics));
 		}
 
-		public Velocity inverseKinematics(final Twist velocity) {
+		public DrivePower inverseKinematics(final Twist velocity) {
 			if (Math.abs(velocity.dtheta) < Epsilon) {
 				return m_chassis.wheelVelocity(velocity.dx, velocity.dy);
 			} else {
@@ -418,7 +402,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 
 			final NetworkTableEntry
 					setSpeedEntry = builder.getEntry(name + " Setpoint"),
-					velocityEntry = builder.getEntry(name + " Velocity (In-s)"),
+					velocityEntry = builder.getEntry(name + " DrivePower (In-s)"),
 					positionEntry = builder.getEntry(name + " Position (In)");
 
 			final String id = Integer.toString(spark.getDeviceId());

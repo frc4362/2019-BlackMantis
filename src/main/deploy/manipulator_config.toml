@@ -1,4 +1,4 @@
-stage1Port = 7
+stage1Port = 20
 stage2Port = [6, 8]
 
 extenderPort = 3

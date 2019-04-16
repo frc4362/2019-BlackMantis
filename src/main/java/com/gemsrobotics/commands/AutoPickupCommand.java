@@ -1,21 +1,25 @@
 package com.gemsrobotics.commands;
 
 import com.gemsrobotics.Config;
-import com.gemsrobotics.Hardware;
 import com.gemsrobotics.commands.any.Wait;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.subsystems.drive.DriveCommandConfig;
-import com.gemsrobotics.util.DualTransmission;
 import com.gemsrobotics.util.camera.Limelight;
-import com.gemsrobotics.util.command.Commands;
 import edu.wpi.first.wpilibj.command.Command;
 
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
 import edu.wpi.first.wpilibj.command.Scheduler;
 
+import java.util.Collections;
+
+import static com.gemsrobotics.util.command.Commands.commandGroupOf;
 import static com.gemsrobotics.util.command.Commands.commandOf;
 
 public class AutoPickupCommand extends Command {
+    private static final DifferentialDrive.DrivePower BACKWARDS_VELOCITY =
+            DifferentialDrive.driveVelocity(-1.0, 0.0);
+    private static final int BACKUP_TICKS = 25;
+
     private final Manipulator m_manipulator;
     private final Limelight m_limelight;
     private final DriveCommandConfig m_cfg;
@@ -50,16 +54,6 @@ public class AutoPickupCommand extends Command {
     public void execute() {
         final var area = m_limelight.getArea();
 
-        // TODO maybe later
-//        if (area > 2.7 && m_state == State.APPROACHING) {
-//            m_driveTrain.getShiftScheduler().block();
-//            Scheduler.getInstance().add(Commands.commandGroupOf(
-//                    new Wait(60),
-//                    commandOf(() -> Hardware.getInstance().getChassis().getTransmission()
-//                                            .set(DualTransmission.Gear.LOW))
-//            ));
-//        }
-
         if (area > m_cfg.slowdownCloseThreshold && m_state == State.APPROACHING) {
             m_state = State.READY_TO_EXTEND;
             m_manipulator.getHand().set(true);
@@ -72,6 +66,8 @@ public class AutoPickupCommand extends Command {
 
         if (area > m_cfg.slowdownOpenThreshold && m_state == State.READY_FOR_PICKUP) {
             m_state = State.READY_FOR_DEPARTURE;
+            // probably keep this here
+            Scheduler.getInstance().add(makeBackupCommand());
             m_manipulator.getHand().set(false);
         }
 
@@ -86,6 +82,13 @@ public class AutoPickupCommand extends Command {
             m_isFinished = true;
             m_manipulator.getArm().set(false);
         }
+    }
+
+    private Command makeBackupCommand() {
+        final var backupTrajectory = Collections.nCopies(BACKUP_TICKS, BACKWARDS_VELOCITY);
+        return commandGroupOf(
+                new Wait(50),
+                commandOf(() -> m_driveTrain.getDriveCommand().queue(backupTrajectory)));
     }
 
     @Override

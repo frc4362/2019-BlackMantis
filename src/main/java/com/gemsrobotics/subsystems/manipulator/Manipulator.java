@@ -10,7 +10,6 @@ import edu.wpi.first.wpilibj.Solenoid;
 public class Manipulator {
 	private static final CANSparkMaxLowLevel.ConfigParameter SENSOR_PARAMETER =
 			CANSparkMaxLowLevel.ConfigParameter.kSensorType;
-
 	private static final int NO_SENSOR_SETTING_ID = 0;
 
 	private final WPI_TalonSRX m_stage1;
@@ -29,8 +28,7 @@ public class Manipulator {
 		m_stage2Slave.follow(m_stage2Master, true);
 		disableEncoder(m_stage2Slave);
 
-		// TODO move this to a config file
-		m_stage1 = new WPI_TalonSRX(20);
+		m_stage1 = new WPI_TalonSRX(config.stage1Port);
 
 		m_arm = new Solenoid(config.placementPort);
 		m_hand = new Solenoid(config.longPlacePort);

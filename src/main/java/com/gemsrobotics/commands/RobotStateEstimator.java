@@ -44,8 +44,8 @@ public final class RobotStateEstimator extends Command {
 				m_vehicle.getInchesPerSecond(Side.RIGHT) * dt);
 
 //		if(count++ > 10) {
-//			System.out.println("Velocity Measured: " + velocityMeasured.toString());
-//			System.out.println("Velocity Predicted: " + velocityPredicted.toString());
+//			System.out.println("DrivePower Measured: " + velocityMeasured.toString());
+//			System.out.println("DrivePower Predicted: " + velocityPredicted.toString());
 //			count = 0;
 //		}
 

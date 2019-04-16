@@ -75,8 +75,6 @@ public class Robot extends TimedRobot {
 		Scheduler.getInstance().add(chassis.getStateEstimator());
 		Scheduler.getInstance().add(chassis.getState().makeLogger());
 		Scheduler.getInstance().add(chassis.getDriveCommand());
-		// TODO this
-//		Scheduler.getInstance().add(new ShiftScheduler(chassis));
 		Scheduler.getInstance().add(m_hardware.getInventory().makeLogger());
 		Scheduler.getInstance().add(new LEDListener(
 				m_hardware.getLEDs(),
@@ -111,6 +109,7 @@ public class Robot extends TimedRobot {
 		Scheduler.getInstance().removeAll();
 		initDriverControl();
 		m_hardware.getLimelight().setLEDMode(LEDMode.ON);
+		Scheduler.getInstance().add(m_hardware.getChassis().getShiftScheduler());
 	}
 
 	@Override
