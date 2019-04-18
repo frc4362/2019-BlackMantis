@@ -125,6 +125,11 @@ public class Lift implements Sendable {
 		return abs(getPosition() - m_setpoint) < STOP_THRESHOLD;
 	}
 
+	public boolean isBlockingCamera() {
+		final var pos = getPosition();
+		return pos < m_liftConfig.cameraBlockedTop && pos > m_liftConfig.cameraBlockedBottom;
+	}
+
 	public double heightRotations(final Position position) {
 		return position.percent * m_liftConfig.totalRotations();
 	}

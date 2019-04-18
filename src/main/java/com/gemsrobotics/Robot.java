@@ -71,7 +71,6 @@ public class Robot extends TimedRobot {
 		final var chassis = m_hardware.getChassis();
 		chassis.getMotors().forEach(motor ->
 			motor.setIdleMode(IdleMode.kBrake));
-
 		Scheduler.getInstance().add(chassis.getStateEstimator());
 		Scheduler.getInstance().add(chassis.getState().makeLogger());
 		Scheduler.getInstance().add(chassis.getDriveCommand());

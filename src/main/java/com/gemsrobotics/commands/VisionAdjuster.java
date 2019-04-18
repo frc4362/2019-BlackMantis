@@ -2,6 +2,7 @@ package com.gemsrobotics.commands;
 
 import com.gemsrobotics.subsystems.adjuster.LateralAdjuster;
 import com.gemsrobotics.subsystems.inventory.Inventory;
+import com.gemsrobotics.subsystems.lift.Lift;
 import com.gemsrobotics.util.camera.Limelight;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
@@ -16,6 +17,7 @@ public class VisionAdjuster extends Command {
 	private final Limelight m_limelight;
 	private final Inventory m_inventory;
 	private final XboxController m_controller;
+	private final Lift m_lift;
 
 	private boolean m_isOverridingLast;
 
@@ -23,12 +25,14 @@ public class VisionAdjuster extends Command {
 			final LateralAdjuster lateralAdjuster,
 			final Limelight limelight,
 			final Inventory inventory,
-			final XboxController controller
+			final XboxController controller,
+			final Lift lift
 	) {
 		m_adjuster = lateralAdjuster;
 		m_limelight = limelight;
 		m_inventory = inventory;
 		m_controller = controller;
+		m_lift = lift;
 	}
 
 	@Override
@@ -49,7 +53,7 @@ public class VisionAdjuster extends Command {
 
 			if (m_controller.getRawButton(1)) {
 				m_adjuster.setPercent(0.5);
-			} else if (m_limelight.isTargetPresent() && !hasCargo) {
+			} else if (!m_lift.isBlockingCamera() && m_limelight.isTargetPresent() && !hasCargo) {
 				m_adjuster.alignRadians(-m_limelight.getOffsetHorizontal());
 			}
 		}

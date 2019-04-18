@@ -6,6 +6,7 @@ import com.gemsrobotics.util.PIDF;
 public class LiftConfig {
 	int portMaster, portSlave;
 	double rotationsTop, rotationsBottom;
+	double cameraBlockedTop, cameraBlockedBottom;
 	PIDF pidVars;
 
 	public double totalRotations() {
