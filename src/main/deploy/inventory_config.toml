@@ -1,3 +1,1 @@
-panelPorts = [0, 1]
-cargoPorts = 0
-voltageRange = [0.0, 0.0]
+port = 0

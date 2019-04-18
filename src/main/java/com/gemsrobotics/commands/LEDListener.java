@@ -1,6 +1,5 @@
 package com.gemsrobotics.commands;
 
-import com.gemsrobotics.Hardware;
 import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.inventory.ManualInventory;
 import com.gemsrobotics.util.camera.Limelight;

@@ -3,11 +3,9 @@ package com.gemsrobotics;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjuster;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjusterConfig;
-import com.gemsrobotics.subsystems.inventory.Inventory;
+import com.gemsrobotics.subsystems.inventory.*;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.subsystems.drive.DrivePorts;
-import com.gemsrobotics.subsystems.inventory.ManualInventory;
-import com.gemsrobotics.subsystems.inventory.UltrasonicInventoryConfig;
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
 import com.gemsrobotics.subsystems.manipulator.ManipulatorConfig;
 import com.gemsrobotics.subsystems.lift.LiftConfig;
@@ -60,10 +58,8 @@ public class Hardware {
 				lateralCfg = getConfig("lateralAdjuster"),
 				ptoCfg = getConfig("pto");
 
-		final var shifterPort = shifterCfg.getLong("port");
-
-		final var ultraCfg = inventoryCfg.to(UltrasonicInventoryConfig.class);
-		m_inventory = new ManualInventory();
+		final var reflectiveCfg = inventoryCfg.to(ReflectiveInventoryConfig.class);
+		m_inventory = new ReflectiveInventory(reflectiveCfg.port);
 		m_leds = new Relay(ledsCfg.getLong("port").intValue());
 		m_limelight = new Limelight();
 		m_compressor = new Compressor();
@@ -71,14 +67,14 @@ public class Hardware {
 		m_ahrs = new MyAHRS(SPI.Port.kMXP);
 
 		final var manipulatorConfig = manipulatorCfgRaw.to(ManipulatorConfig.class);
-
 		m_manipulator = new Manipulator(manipulatorConfig);
+		m_legsFront = new Solenoid(manipulatorConfig.extenderPort);
+		m_legsBack = new DoubleSolenoid(6, 7);
+		m_pto = new PTO(ptoCfg.to(PTOConfig.class));
 		m_rollers = new WPI_TalonSRX(manipulatorConfig.stage1Port);
-
 		m_lateral = new LateralAdjuster(lateralCfg.to(LateralAdjusterConfig.class));
 
-		final var shifter = new Solenoid(shifterPort.intValue());
-
+		final var shifter = new Solenoid(shifterCfg.getLong("port").intValue());
 		m_chassis = new DifferentialDrive(
 				driveCfg.getTable("ports").to(DrivePorts.class),
 				driveCfg.getTable("localizations").to(DifferentialDrive.Localizations.class),
@@ -86,10 +82,6 @@ public class Hardware {
 				m_ahrs,
 				false
 		);
-
-		m_pto = new PTO(ptoCfg.to(PTOConfig.class));
-		m_legsBack = new DoubleSolenoid(6, 7);
-		m_legsFront = new Solenoid(manipulatorConfig.extenderPort);
 	}
 
 	public DifferentialDrive getChassis() {
