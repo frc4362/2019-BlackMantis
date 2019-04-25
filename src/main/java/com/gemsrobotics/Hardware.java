@@ -71,7 +71,7 @@ public class Hardware {
 		m_legsFront = new Solenoid(manipulatorConfig.extenderPort);
 		m_legsBack = new DoubleSolenoid(6, 7);
 		m_pto = new PTO(ptoCfg.to(PTOConfig.class));
-		m_rollers = new WPI_TalonSRX(manipulatorConfig.stage1Port);
+		m_rollers = new WPI_TalonSRX(7);
 		m_lateral = new LateralAdjuster(lateralCfg.to(LateralAdjusterConfig.class));
 
 		final var shifter = new Solenoid(shifterCfg.getLong("port").intValue());

@@ -28,16 +28,16 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.signum;
-
 import static com.gemsrobotics.util.motion.EpsilonValue.Epsilon;
+import static java.lang.Math.*;
+import static java.lang.Math.min;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class DifferentialDrive extends Subsystem implements Sendable {
 	public static final double dt = 0.02;
 
-	private static final double METER_TO_INCHES = 0.025399986284007407;
+	private static final double METER_TO_INCHES = 0.0254;
+	private static final double DEGREES_THRESHOLD = 3.5;
 
 	private final Kinematics m_kinematics;
 	private final Localizations m_localizations;
@@ -115,6 +115,14 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		return Math.abs(v) < LIMIT ? v : LIMIT * Math.signum(v);
 	}
 
+	private static double constrain(
+			final double bot,
+			final double val,
+			final double top
+	) {
+		return max(bot, min(val, top));
+	}
+
 	public void drive(final DrivePower velocity) {
 		curvatureDrive(velocity.linear(), velocity.angular(), false);
 	}
@@ -128,8 +136,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 
 		if (isQuickTurn) {
 			if (Math.abs(linearPower) < m_localizations.quickstopThreshold) {
-				m_accumulator = (1 - m_localizations.alpha) * m_accumulator
-					+ m_localizations.alpha * limit(zRotation) * 2;
+				m_accumulator = (1 - m_localizations.alpha) * m_accumulator + m_localizations.alpha * limit(zRotation) * 2;
 			}
 
 			overPower = 1.0;
@@ -166,6 +173,29 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		}
 
 		drive(leftPower, rightPower);
+	}
+
+	public boolean turnToHeading(final double goal) {
+		final var currentAngle = m_ahrs.getHalfAngle();
+
+		double error = -(currentAngle - goal);
+
+		if (abs(error) > 180) {
+			error = 360 - error;
+
+			if (currentAngle < 0 && goal > 0) {
+				error *= -1;
+			}
+		}
+
+		final boolean isAtHeading = abs(error) < DEGREES_THRESHOLD;
+
+		if (!isAtHeading) {
+			final double angularPower = error * m_localizations.kP_Rotational + copySign(m_localizations.kFF_Rotational, error);
+			curvatureDrive(0, constrain(-1, angularPower, 1), true);
+		}
+
+		return isAtHeading;
 	}
 
 	public void stopMotors() {
@@ -249,7 +279,8 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 
 	public static class Localizations {
 		public double width, length, wheelDiameter, maxVelocity,
-				maxAcceleration, maxJerk, quickstopThreshold, turnSensitivity, alpha;
+				maxAcceleration, maxJerk, quickstopThreshold, turnSensitivity,
+				alpha, kP_Rotational, kFF_Rotational;
 
 		private Trajectory.Config m_config;
 
@@ -402,7 +433,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 
 			final NetworkTableEntry
 					setSpeedEntry = builder.getEntry(name + " Setpoint"),
-					velocityEntry = builder.getEntry(name + " DrivePower (In-s)"),
+					velocityEntry = builder.getEntry(name + " Velocity (In-s)"),
 					positionEntry = builder.getEntry(name + " Position (In)");
 
 			final String id = Integer.toString(spark.getDeviceId());

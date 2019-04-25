@@ -9,6 +9,8 @@ import com.gemsrobotics.util.camera.Limelight;
 import com.gemsrobotics.util.joy.Gemstick;
 import com.gemsrobotics.util.joy.Gemstick.Lens;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
@@ -16,19 +18,21 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static com.gemsrobotics.util.MyAHRS.boundHalfDegrees;
+import static java.lang.Math.*;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class DriveCommand extends Command {
 	private static final double kP = 1.3;
 	private static final double SLOWDOWN_PERCENT = 0.5;
+	public static final double ADJUSTMENT_THRESHOLD = 0.2;
 
 	private final DifferentialDrive m_chassis;
 	private final Gemstick m_stick, m_wheel;
 	private final Limelight m_limelight;
 	private final SendableChooser<Boolean> m_toggler;
 	private final DriveCommandConfig m_cfg;
+	private final XboxController m_controller;
 
 	private Queue<DifferentialDrive.DrivePower> m_driveQueue;
 
@@ -44,6 +48,7 @@ public class DriveCommand extends Command {
 		m_chassis = chassis;
 		m_stick = oi.getStickLeft();
 		m_wheel = oi.getStickRight();
+		m_controller = oi.getController();
 		m_limelight = limelight;
 
 		m_cfg = Config.getConfig("driveCommand").to(DriveCommandConfig.class);
@@ -77,14 +82,16 @@ public class DriveCommand extends Command {
 		}
 
 		if (!m_driveQueue.isEmpty()) {
-			m_chassis.drive(m_driveQueue.poll());
+			final var s = m_driveQueue.poll();
+			System.out.printf("Driving polled values of %f, %f\n", s.left(), s.right());
+			m_chassis.drive(s);
 		} else {
+			System.out.println("Driving unpolled value");
+			double linearPower = m_stick.get(Lens.Y);
+			final boolean isApproaching = isAttemptingVision() && m_limelight.isTargetPresent();
+
 			final double rotationalPower;
 			final boolean isQuickTurn;
-
-			double linearPower = m_stick.get(Lens.Y);
-
-			final boolean isApproaching = isAttemptingVision() && m_limelight.isTargetPresent();
 
 			if (isApproaching) {
 				isQuickTurn = false;
@@ -100,6 +107,7 @@ public class DriveCommand extends Command {
 				rotationalPower =  m_wheel.get(Lens.X);
 			}
 
+			// slow drive based on target size
 			if (DriverStation.getInstance().isAutonomous() || (isAttemptingVision() && isSlowableArea())) {
 				final var previousPower = linearPower;
 				final var area = m_limelight.getArea();
@@ -107,24 +115,66 @@ public class DriveCommand extends Command {
 				if (area > m_cfg.stopOverdriveThreshold) {
 					linearPower = min(0, previousPower);
 				} else {
-					if (m_chassis.getTransmission().get() == DualTransmission.Gear.HIGH) {
-						final double highStartArea = 0.4;
-						final double highEndArea = 8;
-						final var scalingFactor = max(((area - highEndArea) / (highStartArea - highEndArea)), 0);
-						linearPower = min(m_cfg.getRampingRange() * scalingFactor + 0, previousPower);
-					} else {
-						final var scalingFactor = max(((area - m_cfg.endRampArea) / m_cfg.getDivisor()), 0);
-						linearPower = min(m_cfg.getRampingRange() * scalingFactor + m_cfg.minSpeed, previousPower);
-					}
+					linearPower = limitLinearPower(m_chassis.getTransmission().get(), area, previousPower);
 				}
 			}
 
-			m_chassis.curvatureDrive(
-					linearPower,
-					rotationalPower,
-					isQuickTurn
-			);
+			boolean isAtTargetHeading = false;
+			final var povValue = m_wheel.getPOVState();
+			final boolean doSnapTurn = DriverStation.getInstance().isAutonomous() && povValue != Gemstick.POVState.NONE;
+
+			if (doSnapTurn) {
+				// this method has side effects
+				isAtTargetHeading = m_chassis.turnToHeading(toFieldAngle(povValue));
+			}
+
+			if (isAtTargetHeading || !doSnapTurn) {
+				m_chassis.curvatureDrive(
+						linearPower,
+						rotationalPower,
+						isQuickTurn
+				);
+			}
 		}
+	}
+
+	private double toFieldAngle(final Gemstick.POVState base) {
+		switch (base) {
+			case N:
+				return 0;
+			case S:
+				return 179;
+			case E:
+				return 90;
+			case W:
+				return -90;
+			case NE:
+//				return 30;
+				return 0;
+			case NW:
+//				return -30;
+				return -0;
+			case SE:
+//				return 150;
+				return 0;
+			case SW:
+//				return -150;
+				return -0;
+			default:
+			case NONE:
+				return 0;
+		}
+	}
+
+	private double limitLinearPower(final DualTransmission.Gear gear, final double area, final double power) {
+//		if (gear == DualTransmission.Gear.HIGH) {
+//			return 0;
+//		}
+
+		final var schema = m_cfg.schemaForGear(gear);
+
+		final var scalingFactor = max(((area - schema.endRampArea) / schema.getDivisor()), 0);
+		return min(schema.getRampingRange() * scalingFactor + schema.minimumSpeed, power);
 	}
 
 	@Override

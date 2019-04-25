@@ -3,8 +3,8 @@ portSlave = 9
 rotationsTop = 153.0
 rotationsBottom = 0.0
 
-cameraBlockedBottom = 25.0
-cameraBlockedTop = 70.0
+cameraBlockedBottom = 22.0
+cameraBlockedTop = 52.5
 
 [pidVars]
 kP = 1.0

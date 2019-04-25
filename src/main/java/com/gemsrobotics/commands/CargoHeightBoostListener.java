@@ -1,5 +1,6 @@
 package com.gemsrobotics.commands;
 
+import com.gemsrobotics.Hardware;
 import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.lift.Lift;
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
@@ -45,6 +46,8 @@ public class CargoHeightBoostListener extends Command {
 
 		if (m_ticksToDelay == 0) {
 			m_lift.setPosition(Lift.Position.CARGO_1);
+			Hardware.getInstance().getStage1Solenoid().set(false);
+			Hardware.getInstance().getManipulator().setSetSpeed(Manipulator.RunMode.NEUTRAL);
 			m_ticksToDelay = -1;
 		} else if (m_ticksToDelay > 0) {
 			m_ticksToDelay -= 1;

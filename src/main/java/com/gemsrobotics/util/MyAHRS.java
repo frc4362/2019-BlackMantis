@@ -1,7 +1,6 @@
 package com.gemsrobotics.util;
 
 import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Sendable;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilder;
@@ -15,7 +14,7 @@ public class MyAHRS extends AHRS implements Sendable {
 		super(id);
 	}
 
-	private static double boundHalfDegrees(double degrees) {
+	public static double boundHalfDegrees(double degrees) {
 		while (degrees >= 180.0) {
 			degrees -= 360.0;
 		}
@@ -25,6 +24,21 @@ public class MyAHRS extends AHRS implements Sendable {
 		}
 
 		return degrees;
+	}
+
+	/**
+	 * @return 0-359
+	 */
+	public static double reducedHeading(double ret) {
+		while (ret < 0) {
+			ret += 360;
+		}
+
+		while (ret >= 360) {
+			ret -= 360;
+		}
+
+		return ret;
 	}
 
 	/**
@@ -39,12 +53,8 @@ public class MyAHRS extends AHRS implements Sendable {
 	 */
 	@Override
 	public void initSendable(final SendableBuilder builder) {
-		builder.setSmartDashboardType("navMXP");
-
-		final NetworkTableEntry headingEntry =
-				builder.getEntry("Heading");
-
+		builder.setSmartDashboardType("AHRS-Heading");
 		builder.setUpdateTable(() ->
-			headingEntry.setDouble(getHalfAngle()));
+		   builder.getEntry("Heading").setDouble(getHalfAngle()));
 	}
 }

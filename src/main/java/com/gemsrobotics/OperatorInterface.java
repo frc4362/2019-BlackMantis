@@ -204,7 +204,7 @@ public final class OperatorInterface {
 
 		button.whenPressed(commandOf(() -> {
 			//TODOp
-			final var piece = m_controller.getRawButton(3) ? CARGO : PANEL;
+			final var piece = Hardware.getInstance().getInventory().getCurrentPiece();
 			isPressedInAuton[0] = DriverStation.getInstance().isAutonomous();
 
 			switch (piece) {

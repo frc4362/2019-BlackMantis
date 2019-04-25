@@ -1,5 +1,6 @@
 package com.gemsrobotics.commands;
 
+import com.gemsrobotics.Hardware;
 import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.inventory.ManualInventory;
 import com.gemsrobotics.util.camera.Limelight;
@@ -7,6 +8,7 @@ import com.gemsrobotics.util.joy.Gemstick;
 import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class LEDListener extends Command {
     private final Relay m_light;
@@ -33,13 +35,23 @@ public class LEDListener extends Command {
         } else {
             final var isAttemptingPickup = m_controller.getPOV() == Gemstick.POVState.W.getValue();
 
-            if (m_controller.getPOV() == -1) {
-                m_light.set(Relay.Value.kOff);
-            } else if (isAttemptingPickup && m_limelight.isTargetPresent()) {
+            final boolean isHandClosed = Hardware.getInstance().getManipulator().getHand().get();
+
+            SmartDashboard.putBoolean("hand closed", isHandClosed);
+
+            if (m_inventory.getCurrentPiece() == Inventory.GamePiece.CARGO || isHandClosed) {
                 m_light.set(Relay.Value.kOn);
-            } else if (isAttemptingPickup) {
-                m_light.set((System.currentTimeMillis() / 300L) % 2 == 0 ? Relay.Value.kOn : Relay.Value.kOff);
+            } else {
+                m_light.set(Relay.Value.kOff);
             }
+
+//            if (m_controller.getPOV() == -1) {
+//                m_light.set(Relay.Value.kOff);
+//            } else if (isAttemptingPickup && m_limelight.isTargetPresent()) {
+//                m_light.set(Relay.Value.kOn);
+//            } else if (isAttemptingPickup) {
+//                m_light.set((System.currentTimeMillis() / 300L) % 2 == 0 ? Relay.Value.kOn : Relay.Value.kOff);
+//            }
         }
     }
 

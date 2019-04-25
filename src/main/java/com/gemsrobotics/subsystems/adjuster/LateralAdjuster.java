@@ -4,7 +4,6 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.gemsrobotics.util.PIDF;
-import com.gemsrobotics.util.motion.Translation;
 
 import static java.lang.Math.*;
 
@@ -65,12 +64,6 @@ public class LateralAdjuster {
 		m_motor.set(ControlMode.PercentOutput, 0);
 	}
 
-	public void alignTranslation(final Translation trans) {
-		final var proportion = (trans.y() / m_widthInches) * m_widthTicks;
-		final var adjusted = -(proportion - (m_widthTicks / 2));
-		setTicks(adjusted);
-	}
-
 	public void alignRadians(final double radiansFromCenter) {
 		setPercent((radiansFromCenter / m_radiansToEnd + 1) / 2);
 	}
@@ -83,6 +76,10 @@ public class LateralAdjuster {
 		return m_motor.getSelectedSensorPosition(0);
 	}
 
+	public double getWidthTicks() {
+		return m_widthTicks;
+	}
+
 	public double getAdjustmentThreshold() {
 		return m_radiansToEnd;
 	}
@@ -93,5 +90,9 @@ public class LateralAdjuster {
 
 	public boolean isDisabled() {
 		return m_isDisabled;
+	}
+
+	public double inches2Ticks(final double inches) {
+		return (inches / m_widthInches) * m_widthTicks;
 	}
 }

@@ -1,6 +1,8 @@
 package com.gemsrobotics;
 
 import com.gemsrobotics.commands.*;
+import com.gemsrobotics.subsystems.inventory.PreferencesInventory;
+import com.gemsrobotics.subsystems.inventory.ReflectiveInventory;
 import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.camera.Limelight.LEDMode;
 import com.gemsrobotics.util.camera.Limelight.CameraMode;
@@ -47,6 +49,15 @@ public class Robot extends TimedRobot {
 		chassis.configureDriveCommand(limelight, m_oi, driveTrainToggler);
 	}
 
+	@Override
+	public void robotPeriodic() {
+		SmartDashboard.putBoolean("HIGH GEAR", m_hardware.getChassis().getTransmission().get() == Gear.HIGH);
+		m_hardware.getCompressor().setClosedLoopControl(m_compressorToggler.getSelected());
+
+		// TODO
+//		m_hardware.getLights().update();
+	}
+
 	private void initDriverControl() {
 		m_isFieldMatch = m_ds.isFMSAttached();
 
@@ -84,7 +95,9 @@ public class Robot extends TimedRobot {
 				m_hardware.getLateralAdjuster(),
 				limelight,
 				m_hardware.getInventory(),
-				m_oi.getController()));
+				m_oi.getController(),
+				m_hardware.getLift(),
+				m_hardware.getAHRS()));
 		Scheduler.getInstance().add(new CargoHeightBoostListener(
 				lift,
 				m_hardware.getManipulator(),
@@ -108,6 +121,7 @@ public class Robot extends TimedRobot {
 		Scheduler.getInstance().removeAll();
 		initDriverControl();
 		m_hardware.getLimelight().setLEDMode(LEDMode.ON);
+		// TODO test and tune shift scheduler
 		Scheduler.getInstance().add(m_hardware.getChassis().getShiftScheduler());
 	}
 
@@ -117,17 +131,8 @@ public class Robot extends TimedRobot {
 	}
 
 	@Override
-	public void robotPeriodic() {
-		SmartDashboard.putBoolean("HIGH GEAR", m_hardware.getChassis().getTransmission().get() == Gear.HIGH);
-		Hardware.getInstance()
-				.getCompressor()
-				.setClosedLoopControl(m_compressorToggler.getSelected());
-	}
-
-	@Override
 	public void disabledInit() {
 		final var idleMode = m_isFieldMatch ? IdleMode.kBrake : IdleMode.kCoast;
-
 		m_hardware.getChassis().getMotors().forEach(motor ->
 			motor.setIdleMode(idleMode));
 		m_hardware.getLift().setIdleMode(idleMode);
