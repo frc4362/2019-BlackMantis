@@ -64,11 +64,11 @@ public class Limelight {
 	}
 
 	public double getOffsetHorizontal() {
-		return toRadians(m_offsetHorizontalEntry.getDouble(999));
+		return toRadians(m_offsetHorizontalEntry.getDouble(0));
 	}
 
 	public double getOffsetVertical() {
-		return toRadians(m_offsetVerticalEntry.getDouble(999));
+		return toRadians(m_offsetVerticalEntry.getDouble(0));
 	}
 
 	public double getArea() {

@@ -5,6 +5,7 @@ import com.gemsrobotics.commands.any.Wait;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.subsystems.drive.DriveCommandConfig;
 import com.gemsrobotics.util.camera.Limelight;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.command.Command;
 
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
@@ -12,12 +13,11 @@ import edu.wpi.first.wpilibj.command.Scheduler;
 
 import java.util.Collections;
 
-import static com.gemsrobotics.util.command.Commands.commandGroupOf;
-import static com.gemsrobotics.util.command.Commands.commandOf;
+import static com.gemsrobotics.util.command.Commands.*;
 
 public class AutoPickupCommand extends Command {
 	private static final DifferentialDrive.DrivePower BACKWARDS_VELOCITY =
-			DifferentialDrive.driveVelocity(-1.0, 0.0);
+			DifferentialDrive.driveVelocity(-1, 0.0);
 	private static final int BACKUP_TICKS = 20;
 
 	private final Manipulator m_manipulator;
@@ -28,6 +28,8 @@ public class AutoPickupCommand extends Command {
 	private State m_state;
 	private boolean m_isFinished;
 	private long m_lastOpenTime;
+
+	public boolean m_enableBackup;
 
 	public AutoPickupCommand(
 			final Manipulator manipulator,
@@ -50,11 +52,16 @@ public class AutoPickupCommand extends Command {
 		m_isFinished = false;
 		m_state = State.APPROACHING;
 		m_lastOpenTime = 0;
+		m_enableBackup = true;
 	}
 
 	@Override
 	public void execute() {
 		final var area = m_limelight.getArea();
+
+		if (DriverStation.getInstance().getStickButton(0, 2)) {
+			m_enableBackup = false;
+		}
 
 		if (area > m_cfg.slowdownCloseThreshold && m_state == State.APPROACHING) {
 			m_state = State.READY_TO_EXTEND;
@@ -90,9 +97,14 @@ public class AutoPickupCommand extends Command {
 
 	private Command makeBackupCommand() {
 		final var backupTrajectory = Collections.nCopies(BACKUP_TICKS, BACKWARDS_VELOCITY);
-		return commandGroupOf(
-				new Wait(50),
-				commandOf(() -> m_driveTrain.getDriveCommand().queue(backupTrajectory)));
+
+		if (m_enableBackup) {
+			return commandGroupOf(
+					new Wait(400),
+					commandOf(() -> m_driveTrain.getDriveCommand().queue(backupTrajectory)));
+		} else {
+			return nullCommand();
+		}
 	}
 
 	@Override

@@ -9,7 +9,6 @@ import com.gemsrobotics.util.camera.Limelight;
 import com.gemsrobotics.util.joy.Gemstick;
 import com.gemsrobotics.util.joy.Gemstick.Lens;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -18,7 +17,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import static com.gemsrobotics.util.MyAHRS.boundHalfDegrees;
 import static java.lang.Math.*;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -83,10 +81,8 @@ public class DriveCommand extends Command {
 
 		if (!m_driveQueue.isEmpty()) {
 			final var s = m_driveQueue.poll();
-			System.out.printf("Driving polled values of %f, %f\n", s.left(), s.right());
 			m_chassis.drive(s);
 		} else {
-			System.out.println("Driving unpolled value");
 			double linearPower = m_stick.get(Lens.Y);
 			final boolean isApproaching = isAttemptingVision() && m_limelight.isTargetPresent();
 
@@ -167,12 +163,7 @@ public class DriveCommand extends Command {
 	}
 
 	private double limitLinearPower(final DualTransmission.Gear gear, final double area, final double power) {
-//		if (gear == DualTransmission.Gear.HIGH) {
-//			return 0;
-//		}
-
 		final var schema = m_cfg.schemaForGear(gear);
-
 		final var scalingFactor = max(((area - schema.endRampArea) / schema.getDivisor()), 0);
 		return min(schema.getRampingRange() * scalingFactor + schema.minimumSpeed, power);
 	}

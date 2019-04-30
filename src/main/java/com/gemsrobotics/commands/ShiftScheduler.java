@@ -1,5 +1,6 @@
 package com.gemsrobotics.commands;
 
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.gemsrobotics.Hardware;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.util.DualTransmission;
@@ -31,18 +32,13 @@ public class ShiftScheduler extends ToggleableCommand {
 	@Override
 	public void whenEnabled() {
 		final var currentGear = m_transmission.get();
-		final var shouldShiftHigh = isOverSpeed(.90 * PEAK_RPM) && Hardware.getInstance().getLimelight().getArea() < 10;
+		final var shouldShiftHigh = isOverSpeed(.90 * PEAK_RPM);// && Hardware.getInstance().getLimelight().getArea() < 1;
 		final var shouldShiftLow = !isOverSpeed(.80 * PEAK_RPM);
 
 		if (currentGear == LOW && shouldShiftHigh && timeSinceShift() > 250) {
 			m_transmission.set(HIGH);
 		} else if (currentGear == HIGH && shouldShiftLow && timeSinceShift() > 250) {
 			m_transmission.set(LOW);
-		}
-
-		if (DriverStation.getInstance().getStickButton(0, 11)) {
-			m_transmission.set(LOW);
-			cancel();
 		}
 	}
 

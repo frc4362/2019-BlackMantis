@@ -7,7 +7,7 @@ import com.gemsrobotics.subsystems.manipulator.Manipulator;
 import edu.wpi.first.wpilibj.command.Command;
 
 public class CargoHeightBoostListener extends Command {
-	private static final int RAISE_DELAY_MS = 200;
+	private static final int RAISE_DELAY_MS = 400;
 
 	private final Lift m_lift;
 	private final Manipulator m_intake;

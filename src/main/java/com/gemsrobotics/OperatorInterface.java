@@ -21,8 +21,6 @@ import edu.wpi.first.wpilibj.command.Scheduler;
 
 import java.util.Objects;
 
-import static com.gemsrobotics.subsystems.inventory.Inventory.GamePiece.CARGO;
-import static com.gemsrobotics.subsystems.inventory.Inventory.GamePiece.PANEL;
 import static com.gemsrobotics.util.command.Commands.commandOf;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -203,7 +201,6 @@ public final class OperatorInterface {
 		final boolean[] isPressedInAuton = { false };
 
 		button.whenPressed(commandOf(() -> {
-			//TODOp
 			final var piece = Hardware.getInstance().getInventory().getCurrentPiece();
 			isPressedInAuton[0] = DriverStation.getInstance().isAutonomous();
 
@@ -237,7 +234,7 @@ public final class OperatorInterface {
 			final Runnable reset = () -> {
 				m_manipulator.getHand().set(false);
 
-				if (!m_controller.getRawButton(8) && !isPressedInAuton[0]) {
+				if (!m_controller.getRawButton(8) && !isPressedInAuton[0] && panelPosition != Lift.Position.PANEL_1) {
 					m_lift.setPosition(Lift.Position.BOTTOM);
 				}
 			};

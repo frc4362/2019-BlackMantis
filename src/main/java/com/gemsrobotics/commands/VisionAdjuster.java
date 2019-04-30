@@ -3,9 +3,7 @@ package com.gemsrobotics.commands;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjuster;
 import com.gemsrobotics.subsystems.inventory.Inventory;
 import com.gemsrobotics.subsystems.lift.Lift;
-import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.camera.Limelight;
-import com.gemsrobotics.util.joy.Gemstick;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
@@ -14,18 +12,14 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-
 public class VisionAdjuster extends Command {
 	private static final double OVERRIDE_THRESHOLD = 0.3;
-	private static final boolean USE_YAW_ADJUSMENT = true;
 
 	private final LateralAdjuster m_adjuster;
 	private final Limelight m_limelight;
 	private final Inventory m_inventory;
 	private final XboxController m_controller;
 	private final Lift m_lift;
-	private final MyAHRS m_ahrs;
 
 	private boolean m_isOverridingLast;
 
@@ -34,60 +28,13 @@ public class VisionAdjuster extends Command {
 			final Limelight limelight,
 			final Inventory inventory,
 			final XboxController controller,
-			final Lift lift,
-			final MyAHRS ahrs
+			final Lift lift
 	) {
 		m_adjuster = lateralAdjuster;
 		m_limelight = limelight;
 		m_inventory = inventory;
 		m_controller = controller;
 		m_lift = lift;
-		m_ahrs = ahrs;
-	}
-
-	private enum Target {
-		FAR_LEFT(-135),
-		CLOSE_LEFT(-45),
-		FAR_RIGHT(135),
-		CLOSE_RIGHT(45),
-		FRONT_SHIP(0),
-		LEFT_SHIP(90),
-		RIGHT_SHIP(-90),
-		PICKUP(180);
-
-		public final double idealHeading;
-
-		Target(final double h) {
-			idealHeading = h;
-		}
-
-		public static Target forAngle(final double angle) {
-			// TODO change these measurements
-			if (angle <= 15 && angle >= -15) {
-				return FRONT_SHIP;
-			} else if (angle > 15 && angle <= 45) {
-				return CLOSE_RIGHT;
-			} else if (angle > 45 && angle <= 112.5) {
-				return LEFT_SHIP;
-			} else if (angle > 112.5 && angle <= 157.5) {
-				return FAR_RIGHT;
-			} else if (angle > 157.5 || angle < -157.5) {
-				return PICKUP;
-			} else if (angle < -22.5 && angle >= -67.5) {
-				return CLOSE_LEFT;
-			} else if (angle < -67.5 && angle >= -112.5) {
-				return RIGHT_SHIP;
-			} else if (angle < -112.5 && angle >= -157.5) {
-				return FAR_LEFT;
-			} else {
-				return null;
-			}
-		}
-
-		public boolean useYawAdjustment() {
-			final var mag = abs(idealHeading);
-			return mag < 170 && mag > 10;
-		}
 	}
 
 	@Override

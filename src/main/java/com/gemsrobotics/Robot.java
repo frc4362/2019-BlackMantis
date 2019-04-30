@@ -1,8 +1,6 @@
 package com.gemsrobotics;
 
 import com.gemsrobotics.commands.*;
-import com.gemsrobotics.subsystems.inventory.PreferencesInventory;
-import com.gemsrobotics.subsystems.inventory.ReflectiveInventory;
 import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.camera.Limelight.LEDMode;
 import com.gemsrobotics.util.camera.Limelight.CameraMode;
@@ -96,8 +94,7 @@ public class Robot extends TimedRobot {
 				limelight,
 				m_hardware.getInventory(),
 				m_oi.getController(),
-				m_hardware.getLift(),
-				m_hardware.getAHRS()));
+				m_hardware.getLift()));
 		Scheduler.getInstance().add(new CargoHeightBoostListener(
 				lift,
 				m_hardware.getManipulator(),
@@ -121,7 +118,6 @@ public class Robot extends TimedRobot {
 		Scheduler.getInstance().removeAll();
 		initDriverControl();
 		m_hardware.getLimelight().setLEDMode(LEDMode.ON);
-		// TODO test and tune shift scheduler
 		Scheduler.getInstance().add(m_hardware.getChassis().getShiftScheduler());
 	}
 
