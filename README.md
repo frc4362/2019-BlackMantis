@@ -11,4 +11,4 @@ Features
 - Curvature drive controls and safe mode designed for airing or testing.
 - TOML-based subsystem configuration.
 - Safe, managed climbing on a power-transfer overdrive with key sequencing and limitations on deployment. 
-- Pneumatic shifting which accounts for the gearing ratios of the transmission for assistance in odometry. 
+- Automamtic pneumatic shifting which accounts for the gearing ratios of the transmission for assistance in odometry, the control state, and the current velocity. 
