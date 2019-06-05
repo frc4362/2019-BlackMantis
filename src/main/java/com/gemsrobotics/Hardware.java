@@ -77,7 +77,7 @@ public class Hardware {
 		final var shifter = new Solenoid(shifterCfg.getLong("port").intValue());
 		m_chassis = new DifferentialDrive(
 				driveCfg.getTable("ports").to(DrivePorts.class),
-				driveCfg.getTable("localizations").to(DifferentialDrive.Localizations.class),
+				driveCfg.getTable("localizations").to(DifferentialDrive.Specifications.class),
 				shifter,
 				m_ahrs,
 				false

@@ -2,7 +2,7 @@ package com.gemsrobotics.subsystems.drive;
 
 import com.gemsrobotics.OperatorInterface;
 import com.gemsrobotics.commands.DriveCommand;
-import com.gemsrobotics.commands.RobotStateEstimator;
+import com.gemsrobotics.commands.ChassisLocalization;
 import com.gemsrobotics.commands.ShiftScheduler;
 import com.gemsrobotics.util.DualTransmission;
 import com.gemsrobotics.util.MyAHRS;
@@ -40,7 +40,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	private static final double DEGREES_THRESHOLD = 3.5;
 
 	private final Kinematics m_kinematics;
-	private final Localizations m_localizations;
+	private final Specifications m_specifications;
 	private final DualTransmission m_transmission;
 	private final RobotState m_state;
 	private final List<CANSparkMax> m_motors;
@@ -55,22 +55,22 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		"Left Front", "Left Back", "Right Front", "Right Back"
 	};
 
-	private RobotStateEstimator m_robotStateEstimator;
+	private ChassisLocalization m_robotStateEstimator;
 
 	public DifferentialDrive(
 			final DrivePorts drivePorts,
-			final Localizations localizations,
+			final Specifications specifications,
 			final Solenoid shifter,
 			final MyAHRS ahrs,
 			final boolean useVelocityControl
 	) {
 		final Integer[] ports = drivePorts.get();
 		m_ahrs = ahrs;
-		m_localizations = localizations;
+		m_specifications = specifications;
 		m_transmission = new DualTransmission(shifter);
-		m_kinematics = new Kinematics(m_localizations, this);
+		m_kinematics = new Kinematics(m_specifications, this);
 		m_state = new RobotState(this);
-		m_robotStateEstimator = new RobotStateEstimator(this);
+		m_robotStateEstimator = new ChassisLocalization(this);
 		m_shiftScheduler = new ShiftScheduler(this);
 
 		if (ports.length != 4) {
@@ -89,7 +89,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		});
 
 		m_motors.stream().map(CANSparkMax::getPIDController).forEach(controller -> {
-			m_localizations.pidDrive.configure(controller);
+			m_specifications.pidDrive.configure(controller);
 			controller.setOutputRange(-1.0, +1.0);
 		});
 
@@ -135,8 +135,8 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		double overPower, angularPower;
 
 		if (isQuickTurn) {
-			if (Math.abs(linearPower) < m_localizations.quickstopThreshold) {
-				m_accumulator = (1 - m_localizations.alpha) * m_accumulator + m_localizations.alpha * limit(zRotation) * 2;
+			if (Math.abs(linearPower) < m_specifications.quickstopThreshold) {
+				m_accumulator = (1 - m_specifications.alpha) * m_accumulator + m_specifications.alpha * limit(zRotation) * 2;
 			}
 
 			overPower = 1.0;
@@ -144,7 +144,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		} else {
 			overPower = 0.0;
 			zRotation *= -signum(linearPower);
-			angularPower = abs(linearPower) * zRotation * m_localizations.turnSensitivity - m_accumulator;
+			angularPower = abs(linearPower) * zRotation * m_specifications.turnSensitivity - m_accumulator;
 
 			if (m_accumulator > 1) {
 				m_accumulator -= 1;
@@ -191,7 +191,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		final boolean isAtHeading = abs(error) < DEGREES_THRESHOLD;
 
 		if (!isAtHeading) {
-			final double angularPower = error * m_localizations.kP_Rotational + copySign(m_localizations.kFF_Rotational, error);
+			final double angularPower = error * m_specifications.kP_Rotational + copySign(m_specifications.kFF_Rotational, error);
 			curvatureDrive(0, constrain(-1, angularPower, 1), true);
 		}
 
@@ -212,7 +212,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 
 	private double rpm2InPerS(final double rpm) {
 		final double rps = rpm / 60.0;
-		return rps * m_localizations.rotationsToInches(m_transmission);
+		return rps * m_specifications.rotationsToInches(m_transmission);
 	}
 
 	public double getInchesPerSecond(final Side side) {
@@ -221,7 +221,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	}
 
 	public double getInchesPosition(final Side side) {
-		return m_localizations.rotationsToInches(m_transmission)
+		return m_specifications.rotationsToInches(m_transmission)
 			   * getMotor(side).getEncoder().getPosition()
 			   * side.encoderMultiplier;
 	}
@@ -230,8 +230,8 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		return m_kinematics;
 	}
 
-	public Localizations getLocals() {
-		return m_localizations;
+	public Specifications getLocals() {
+		return m_specifications;
 	}
 
 	public RobotState getState() {
@@ -250,7 +250,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		return m_driveCommand;
 	}
 
-	public RobotStateEstimator getStateEstimator() {
+	public ChassisLocalization getStateEstimator() {
 		return m_robotStateEstimator;
 	}
 
@@ -277,7 +277,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		}
 	}
 
-	public static class Localizations {
+	public static class Specifications {
 		public double width, length, wheelDiameter, maxVelocity,
 				maxAcceleration, maxJerk, quickstopThreshold, turnSensitivity,
 				alpha, kP_Rotational, kFF_Rotational;
@@ -350,8 +350,8 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	}
 
 	public DrivePower wheelVelocity(final double l, final double r) {
-		final double linear = (m_localizations.wheelRadius() * (l + r)) / 2.0,
-				angular = m_localizations.wheelRadius() * (r - l) / m_localizations.width;
+		final double linear = (m_specifications.wheelRadius() * (l + r)) / 2.0,
+				angular = m_specifications.wheelRadius() * (r - l) / m_specifications.width;
 
 		return new DrivePower(linear, angular);
 	}
@@ -361,11 +361,11 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	}
 
 	public static class Kinematics {
-		private final DifferentialDrive.Localizations m_localizations;
+		private final Specifications m_specifications;
 		private final DifferentialDrive m_chassis;
 
-		public Kinematics(final Localizations localizations, final DifferentialDrive chassis) {
-			m_localizations = localizations;
+		public Kinematics(final Specifications specifications, final DifferentialDrive chassis) {
+			m_specifications = specifications;
 			m_chassis = chassis;
 		}
 
@@ -374,7 +374,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 				final double wheelDeltaRight
 		) {
 			final double velocityDelta = (wheelDeltaRight - wheelDeltaLeft) / 2.0,
-					rotationDelta = velocityDelta * 2 / m_localizations.width;
+					rotationDelta = velocityDelta * 2 / m_specifications.width;
 
 			return forwardKinematics(wheelDeltaLeft, wheelDeltaRight, rotationDelta);
 		}
@@ -414,7 +414,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 			if (Math.abs(velocity.dtheta) < Epsilon) {
 				return m_chassis.wheelVelocity(velocity.dx, velocity.dy);
 			} else {
-				final double dv = m_localizations.width * velocity.dtheta / 2.0;
+				final double dv = m_specifications.width * velocity.dtheta / 2.0;
 				return m_chassis.wheelVelocity(velocity.dx - dv, velocity.dx + dv);
 			}
 		}
