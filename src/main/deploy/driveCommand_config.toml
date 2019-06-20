@@ -1,10 +1,10 @@
 slowdownCloseThreshold = 3.8
-slowdownExtendThreshold = 13.0
-slowdownOpenThreshold = 23.0
-slowdownResetThreshold = 13.0
+slowdownExtendThreshold = 10.0
+slowdownOpenThreshold = 24.5
+slowdownResetThreshold = 9.0
 slowdownPickupThreshold = 20.0
 
-stopOverdriveThreshold = 24.0
+stopOverdriveThreshold = 25.5
 
 rumbleAngularPowerRequirement = 0.2
 

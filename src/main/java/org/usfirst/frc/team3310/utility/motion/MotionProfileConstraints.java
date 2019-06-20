@@ -7,7 +7,7 @@ public class MotionProfileConstraints {
     protected double max_abs_vel = Double.POSITIVE_INFINITY;
     protected double max_abs_acc = Double.POSITIVE_INFINITY;
 
-    public MotionProfileConstraints(double max_vel, double max_acc) {
+    public MotionProfileConstraints(final double max_vel, final double max_acc) {
         this.max_abs_vel = Math.abs(max_vel);
         this.max_abs_acc = Math.abs(max_acc);
     }
@@ -27,11 +27,13 @@ public class MotionProfileConstraints {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (!(obj instanceof MotionProfileConstraints)) {
             return false;
         }
+
         final MotionProfileConstraints other = (MotionProfileConstraints) obj;
+
         return (other.max_abs_acc() == max_abs_acc()) && (other.max_abs_vel() == max_abs_vel());
     }
 }

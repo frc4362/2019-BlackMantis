@@ -10,10 +10,8 @@ import java.text.DecimalFormat;
  * Inspired by Sophus (https://github.com/strasdat/Sophus/tree/master/sophus)
  */
 public class Rotation2d implements Interpolable<Rotation2d> {
-    protected static final Rotation2d kIdentity = new Rotation2d();
-
     public static final Rotation2d identity() {
-        return kIdentity;
+        return new Rotation2d();
     }
 
     protected static final double kEpsilon = 1E-9;
@@ -25,28 +23,29 @@ public class Rotation2d implements Interpolable<Rotation2d> {
         this(1, 0, false);
     }
 
-    public Rotation2d(double x, double y, boolean normalize) {
+    public Rotation2d(final double x, final double y, final boolean normalize) {
         cos_angle_ = x;
         sin_angle_ = y;
+
         if (normalize) {
             normalize();
         }
     }
 
-    public Rotation2d(Rotation2d other) {
+    public Rotation2d(final Rotation2d other) {
         cos_angle_ = other.cos_angle_;
         sin_angle_ = other.sin_angle_;
     }
 
-    public Rotation2d(Translation2d direction, boolean normalize) {
+    public Rotation2d(final Translation2d direction, final boolean normalize) {
         this(direction.x(), direction.y(), normalize);
     }
 
-    public static Rotation2d fromRadians(double angle_radians) {
+    public static Rotation2d fromRadians(final double angle_radians) {
         return new Rotation2d(Math.cos(angle_radians), Math.sin(angle_radians), false);
     }
 
-    public static Rotation2d fromDegrees(double angle_degrees) {
+    public static Rotation2d fromDegrees(final double angle_degrees) {
         return fromRadians(Math.toRadians(angle_degrees));
     }
 
@@ -56,6 +55,7 @@ public class Rotation2d implements Interpolable<Rotation2d> {
      */
     public void normalize() {
         double magnitude = Math.hypot(cos_angle_, sin_angle_);
+
         if (magnitude > kEpsilon) {
             sin_angle_ /= magnitude;
             cos_angle_ /= magnitude;
@@ -81,6 +81,7 @@ public class Rotation2d implements Interpolable<Rotation2d> {
                 return Double.NEGATIVE_INFINITY;
             }
         }
+
         return sin_angle_ / cos_angle_;
     }
 
@@ -99,7 +100,7 @@ public class Rotation2d implements Interpolable<Rotation2d> {
      *            The other rotation. See: https://en.wikipedia.org/wiki/Rotation_matrix
      * @return This rotation rotated by other.
      */
-    public Rotation2d rotateBy(Rotation2d other) {
+    public Rotation2d rotateBy(final Rotation2d other) {
         return new Rotation2d(cos_angle_ * other.cos_angle_ - sin_angle_ * other.sin_angle_,
                 cos_angle_ * other.sin_angle_ + sin_angle_ * other.cos_angle_, true);
     }
@@ -117,7 +118,7 @@ public class Rotation2d implements Interpolable<Rotation2d> {
         return new Rotation2d(cos_angle_, -sin_angle_, false);
     }
 
-    public boolean isParallel(Rotation2d other) {
+    public boolean isParallel(final Rotation2d other) {
         return epsilonEquals(Translation2d.cross(toTranslation(), other.toTranslation()), 0.0, kEpsilon);
     }
 
@@ -126,13 +127,15 @@ public class Rotation2d implements Interpolable<Rotation2d> {
     }
 
     @Override
-    public Rotation2d interpolate(Rotation2d other, double x) {
+    public Rotation2d interpolate(final Rotation2d other, final double x) {
         if (x <= 0) {
             return new Rotation2d(this);
         } else if (x >= 1) {
             return new Rotation2d(other);
         }
+
         double angle_diff = inverse().rotateBy(other).getRadians();
+
         return this.rotateBy(Rotation2d.fromRadians(angle_diff * x));
     }
 

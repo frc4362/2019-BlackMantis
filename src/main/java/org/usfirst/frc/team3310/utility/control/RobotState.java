@@ -2,7 +2,6 @@ package org.usfirst.frc.team3310.utility.control;
 
 import java.util.Map;
 
-import org.usfirst.frc.team3310.paths.PathContainer;
 import org.usfirst.frc.team3310.utility.math.InterpolatingDouble;
 import org.usfirst.frc.team3310.utility.math.InterpolatingTreeMap;
 import org.usfirst.frc.team3310.utility.math.RigidTransform2d;
@@ -73,7 +72,7 @@ public class RobotState {
      * Returns the robot's position on the field at a certain time. Linearly interpolates between stored robot positions
      * to fill in the gaps.
      */
-    public synchronized RigidTransform2d getFieldToVehicle(double timestamp) {
+    public synchronized RigidTransform2d getFieldToVehicle(final double timestamp) {
         return field_to_vehicle_.getInterpolated(new InterpolatingDouble(timestamp));
     }
 
@@ -81,27 +80,36 @@ public class RobotState {
         return field_to_vehicle_.lastEntry();
     }
 
-    public synchronized RigidTransform2d getPredictedFieldToVehicle(double lookahead_time) {
+    public synchronized RigidTransform2d getPredictedFieldToVehicle(final double lookahead_time) {
         return getLatestFieldToVehicle().getValue()
                 .transformBy(RigidTransform2d.exp(vehicle_velocity_predicted_.scaled(lookahead_time)));
     }
 
-    public synchronized void addFieldToVehicleObservation(double timestamp, RigidTransform2d observation) {
+    public synchronized void addFieldToVehicleObservation(final double timestamp, final RigidTransform2d observation) {
         field_to_vehicle_.put(new InterpolatingDouble(timestamp), observation);
     }
 
-    public synchronized void addObservations(double timestamp, Twist2d measured_velocity, Twist2d predicted_velocity) {
-        addFieldToVehicleObservation(timestamp, Kinematics.integrateForwardKinematics(getLatestFieldToVehicle().getValue(), measured_velocity));
+    public synchronized void addObservations(
+            final double timestamp,
+            final Twist2d measured_velocity,
+            final Twist2d predicted_velocity
+    ) {
+        addFieldToVehicleObservation(timestamp, Kinematics.solveForwardKinematics(getLatestFieldToVehicle().getValue(), measured_velocity));
         vehicle_velocity_measured_ = measured_velocity;
         vehicle_velocity_predicted_ = predicted_velocity;
     }
 
-    public synchronized Twist2d generateOdometryFromSensors(double left_encoder_delta_distance,
-            double right_encoder_delta_distance, Rotation2d current_gyro_angle) {
+    public synchronized Twist2d generateOdometryFromSensors(
+            final double left_encoder_delta_distance,
+            final double right_encoder_delta_distance,
+            final Rotation2d current_gyro_angle
+    ) {
         final RigidTransform2d last_measurement = getLatestFieldToVehicle().getValue();
         final Twist2d delta = Kinematics.forwardKinematics(last_measurement.getRotation(),
                 left_encoder_delta_distance, right_encoder_delta_distance, current_gyro_angle);
+
         distance_driven_ += delta.dx;
+
         return delta;
     }
 

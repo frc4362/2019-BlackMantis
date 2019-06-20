@@ -21,8 +21,11 @@ public class PathBuilder {
 
     public static Path buildPathFromWaypoints(List<Waypoint> w) {
         Path p = new Path();
-        if (w.size() < 2)
+
+        if (w.size() < 2) {
             throw new Error("Path must contain at least 2 waypoints");
+        }
+
         int i = 0;
         if (w.size() > 2) {
             do {
@@ -30,6 +33,7 @@ public class PathBuilder {
                 i++;
             } while (i < w.size() - 2);
         }
+
         new Line(w.get(w.size() - 2), w.get(w.size() - 1)).addToPath(p, 0);
         p.extrapolateLast();
         p.verifySpeeds();

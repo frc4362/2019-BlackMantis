@@ -1,5 +1,6 @@
 package org.usfirst.frc.team3310.utility.motion;
 
+import static java.lang.Math.signum;
 import static org.usfirst.frc.team3310.utility.Util.epsilonEquals;
 import static org.usfirst.frc.team3310.utility.motion.MotionUtil.kEpsilon;
 
@@ -10,7 +11,7 @@ public class MotionSegment {
     protected MotionState mStart;
     protected MotionState mEnd;
 
-    public MotionSegment(MotionState start, MotionState end) {
+    public MotionSegment(final MotionState start, final MotionState end) {
         mStart = start;
         mEnd = end;
     }
@@ -27,25 +28,30 @@ public class MotionSegment {
     public boolean isValid() {
         if (!epsilonEquals(start().acc(), end().acc(), kEpsilon)) {
             // Acceleration is not constant within the segment.
-            System.err.println(
-                    "Segment acceleration not constant! Start acc: " + start().acc() + ", End acc: " + end().acc());
+            System.err.println("Segment acceleration not constant! Start acc: " + start().acc() + ", End acc: " + end().acc());
             return false;
         }
-        if (Math.signum(start().vel()) * Math.signum(end().vel()) < 0.0 && !epsilonEquals(start().vel(), 0.0, kEpsilon)
+
+        if (signum(start().vel()) * signum(end().vel()) < 0.0 && !epsilonEquals(start().vel(), 0.0, kEpsilon)
                 && !epsilonEquals(end().vel(), 0.0, kEpsilon)) {
             // Velocity direction reverses within the segment.
             System.err.println("Segment velocity reverses! Start vel: " + start().vel() + ", End vel: " + end().vel());
+
             return false;
         }
+
         if (!start().extrapolate(end().t()).equals(end())) {
             // A single segment is not consistent.
             if (start().t() == end().t() && Double.isInfinite(start().acc())) {
                 // One allowed exception: If acc is infinite and dt is zero.
                 return true;
             }
+
             System.err.println("Segment not consistent! Start: " + start() + ", End: " + end());
+
             return false;
         }
+
         return true;
     }
 
@@ -61,7 +67,7 @@ public class MotionSegment {
         return mStart;
     }
 
-    public void setStart(MotionState start) {
+    public void setStart(final MotionState start) {
         mStart = start;
     }
 
@@ -69,7 +75,7 @@ public class MotionSegment {
         return mEnd;
     }
 
-    public void setEnd(MotionState end) {
+    public void setEnd(final MotionState end) {
         mEnd = end;
     }
 

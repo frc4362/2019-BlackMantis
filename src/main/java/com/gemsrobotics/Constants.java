@@ -12,7 +12,7 @@ public class Constants {
 
     // Wheels
     public static double kDriveWheelDiameterInches = 5.8;
-    public static double kTrackWidthInches = 26.17;
+    public static double kTrackWidthInches = 27.75;
     public static double kTrackScrubFactor = 0.924;
     
     // Drive constants
@@ -59,7 +59,6 @@ public class Constants {
                                                                                                                // in RPM
     public static double kDriveLowGearMaxAccel = 18.0 * 12.0 * 60.0 / (Math.PI * kDriveWheelDiameterInches); // 18 fps/s
                                                                                                              // in RPM/s
-
     public static double kDriveVoltageCompensationRampRate = 0.0;
 
     // Turn to heading gains

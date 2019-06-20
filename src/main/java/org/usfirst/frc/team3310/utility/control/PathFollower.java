@@ -8,6 +8,9 @@ import org.usfirst.frc.team3310.utility.motion.MotionProfileGoal.CompletionBehav
 import org.usfirst.frc.team3310.utility.motion.MotionState;
 import org.usfirst.frc.team3310.utility.motion.ProfileFollower;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.min;
+
 /**
  * A PathFollower follows a predefined path using a combination of feedforward and feedback control. It uses an
  * AdaptivePurePursuitController to choose a reference pose and generate a steering command (curvature), and then a
@@ -52,10 +55,20 @@ public class PathFollower {
         public final double goal_vel_tolerance;
         public final double stop_steering_distance;
 
-        public Parameters(Lookahead lookahead, double inertia_gain, double profile_kp, double profile_ki,
-                double profile_kv, double profile_kffv, double profile_kffa, double profile_max_abs_vel,
-                double profile_max_abs_acc, double goal_pos_tolerance, double goal_vel_tolerance,
-                double stop_steering_distance) {
+        public Parameters(
+                final Lookahead lookahead,
+                final double inertia_gain,
+                final double profile_kp,
+                final double profile_ki,
+                final double profile_kv,
+                final double profile_kffv,
+                final double profile_kffa,
+                final double profile_max_abs_vel,
+                final double profile_max_abs_acc,
+                final double goal_pos_tolerance,
+                final double goal_vel_tolerance,
+                final double stop_steering_distance
+        ) {
             this.lookahead = lookahead;
             this.inertia_gain = inertia_gain;
             this.profile_kp = profile_kp;
@@ -90,13 +103,16 @@ public class PathFollower {
     /**
      * Create a new PathFollower for a given path.
      */
-    public PathFollower(Path path, boolean reversed, Parameters parameters) {
+    public PathFollower(final Path path, final boolean reversed, final Parameters parameters) {
         mSteeringController = new AdaptivePurePursuitController(path, reversed, parameters.lookahead);
         mLastSteeringDelta = Twist2d.identity();
-        mVelocityController = new ProfileFollower(parameters.profile_kp, parameters.profile_ki, parameters.profile_kv,
-                parameters.profile_kffv, parameters.profile_kffa);
-        mVelocityController.setConstraints(
-                new MotionProfileConstraints(parameters.profile_max_abs_vel, parameters.profile_max_abs_acc));
+        mVelocityController = new ProfileFollower(
+                parameters.profile_kp,
+                parameters.profile_ki,
+                parameters.profile_kv,
+                parameters.profile_kffv,
+                parameters.profile_kffa);
+        mVelocityController.setConstraints(new MotionProfileConstraints(parameters.profile_max_abs_vel, parameters.profile_max_abs_acc));
         mMaxProfileVel = parameters.profile_max_abs_vel;
         mMaxProfileAcc = parameters.profile_max_abs_acc;
         mGoalPosTolerance = parameters.goal_pos_tolerance;
@@ -118,9 +134,15 @@ public class PathFollower {
      *            The current robot velocity.
      * @return The velocity command to apply
      */
-    public synchronized Twist2d update(double t, RigidTransform2d pose, double displacement, double velocity) {
+    public synchronized Twist2d update(
+            final double t,
+            final RigidTransform2d pose,
+            final double displacement,
+            final double velocity
+    ) {
         if (!mSteeringController.isFinished()) {
             final AdaptivePurePursuitController.Command steering_command = mSteeringController.update(pose);
+
             mDebugOutput.lookahead_point_x = steering_command.lookahead_point.x();
             mDebugOutput.lookahead_point_y = steering_command.lookahead_point.y();
             mDebugOutput.lookahead_point_velocity = steering_command.end_velocity;
@@ -130,11 +152,12 @@ public class PathFollower {
             mCrossTrackError = steering_command.cross_track_error;
             mLastSteeringDelta = steering_command.delta;
             mVelocityController.setGoalAndConstraints(
-                    new MotionProfileGoal(displacement + steering_command.delta.dx,
-                            Math.abs(steering_command.end_velocity), CompletionBehavior.VIOLATE_MAX_ACCEL,
+                    new MotionProfileGoal(
+                            displacement + steering_command.delta.dx,
+                            abs(steering_command.end_velocity),
+                            CompletionBehavior.VIOLATE_MAX_ACCEL,
                             mGoalPosTolerance, mGoalVelTolerance),
-                    new MotionProfileConstraints(Math.min(mMaxProfileVel, steering_command.max_velocity),
-                            mMaxProfileAcc));
+                    new MotionProfileConstraints(min(mMaxProfileVel, steering_command.max_velocity), mMaxProfileAcc));
 
             if (steering_command.remaining_path_length < mStopSteeringDistance) {
                 doneSteering = true;
@@ -143,13 +166,16 @@ public class PathFollower {
 
         final double velocity_command = mVelocityController.update(new MotionState(t, displacement, velocity, 0.0), t);
         mAlongTrackError = mVelocityController.getPosError();
+
         final double curvature = mLastSteeringDelta.dtheta / mLastSteeringDelta.dx;
         double dtheta = mLastSteeringDelta.dtheta;
-        if (!Double.isNaN(curvature) && Math.abs(curvature) < kReallyBigNumber) {
+
+        if (!Double.isNaN(curvature) && abs(curvature) < kReallyBigNumber) {
             // Regenerate angular velocity command from adjusted curvature.
-            final double abs_velocity_setpoint = Math.abs(mVelocityController.getSetpoint().vel());
+            final double abs_velocity_setpoint = abs(mVelocityController.getSetpoint().vel());
             dtheta = mLastSteeringDelta.dx * curvature * (1.0 + mInertiaGain * abs_velocity_setpoint);
         }
+
         final double scale = velocity_command / mLastSteeringDelta.dx;
         final Twist2d rv = new Twist2d(mLastSteeringDelta.dx * scale, 0.0, dtheta * scale);
 
@@ -192,7 +218,7 @@ public class PathFollower {
         overrideFinished = true;
     }
 
-    public boolean hasPassedMarker(String marker) {
+    public boolean hasPassedMarker(final String marker) {
         return mSteeringController.hasPassedMarker(marker);
     }
 }

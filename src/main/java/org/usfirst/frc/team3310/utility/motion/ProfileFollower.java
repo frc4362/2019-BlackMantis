@@ -2,6 +2,9 @@ package org.usfirst.frc.team3310.utility.motion;
 
 import org.usfirst.frc.team3310.utility.motion.MotionProfileGoal.CompletionBehavior;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 /**
  * A controller for tracking a profile generated to attain a MotionProfileGoal. The controller uses feedforward on
  * acceleration, velocity, and position; proportional feedback on velocity and position; and integral feedback on
@@ -42,12 +45,24 @@ public class ProfileFollower {
      * @param kffa
      *            The feedforward gain on acceleration.
      */
-    public ProfileFollower(double kp, double ki, double kv, double kffv, double kffa) {
+    public ProfileFollower(
+            final double kp,
+            final double ki,
+            final double kv,
+            final double kffv,
+            final double kffa
+    ) {
         resetProfile();
         setGains(kp, ki, kv, kffv, kffa);
     }
 
-    public void setGains(double kp, double ki, double kv, double kffv, double kffa) {
+    public void setGains(
+            final double kp,
+            final double ki,
+            final double kv,
+            final double kffv,
+            final double kffa
+    ) {
         mKp = kp;
         mKi = ki;
         mKv = kv;
@@ -73,16 +88,17 @@ public class ProfileFollower {
     /**
      * Specify a goal and constraints for achieving the goal.
      */
-    public void setGoalAndConstraints(MotionProfileGoal goal, MotionProfileConstraints constraints) {
+    public void setGoalAndConstraints(final MotionProfileGoal goal, final MotionProfileConstraints constraints) {
         if (mGoal != null && !mGoal.equals(goal) && mLatestSetpoint != null) {
             // Clear the final state bit since the goal has changed.
             mLatestSetpoint.final_setpoint = false;
         }
+
         mGoal = goal;
         mConstraints = constraints;
     }
 
-    public void setGoal(MotionProfileGoal goal) {
+    public void setGoal(final MotionProfileGoal goal) {
         setGoalAndConstraints(goal, mConstraints);
     }
 
@@ -93,7 +109,7 @@ public class ProfileFollower {
         return mGoal;
     }
 
-    public void setConstraints(MotionProfileConstraints constraints) {
+    public void setConstraints(final MotionProfileConstraints constraints) {
         setGoalAndConstraints(mGoal, constraints);
     }
 
@@ -124,15 +140,17 @@ public class ProfileFollower {
      *            The timestamp for which the setpoint is desired.
      * @return An output that reflects the control output to apply to achieve the new setpoint.
      */
-    public synchronized double update(MotionState latest_state, double t) {
+    public synchronized double update(final MotionState latest_state, final double t) {
         mLatestActualState = latest_state;
         MotionState prev_state = latest_state;
+
         if (mLatestSetpoint != null) {
             prev_state = mLatestSetpoint.motion_state;
         } else {
             mInitialState = prev_state;
         }
-        final double dt = Math.max(0.0, t - prev_state.t());
+
+        final double dt = max(0.0, t - prev_state.t());
         mLatestSetpoint = mSetpointGenerator.getSetpoint(mConstraints, mGoal, prev_state, t);
 
         // Update error.
@@ -142,6 +160,7 @@ public class ProfileFollower {
         // Calculate the feedforward and proportional terms.
         double output = mKp * mLatestPosError + mKv * mLatestVelError + mKffv * mLatestSetpoint.motion_state.vel()
                 + (Double.isNaN(mLatestSetpoint.motion_state.acc()) ? 0.0 : mKffa * mLatestSetpoint.motion_state.acc());
+
         if (output >= mMinOutput && output <= mMaxOutput) {
             // Update integral.
             mTotalError += mLatestPosError * dt;
@@ -151,16 +170,16 @@ public class ProfileFollower {
             mTotalError = 0.0;
         }
         // Clamp to limits.
-        output = Math.max(mMinOutput, Math.min(mMaxOutput, output));
+        output = max(mMinOutput, min(mMaxOutput, output));
 
         return output;
     }
 
-    public void setMinOutput(double min_output) {
+    public void setMinOutput(final double min_output) {
         mMinOutput = min_output;
     }
 
-    public void setMaxOutput(double max_output) {
+    public void setMaxOutput(final double max_output) {
         mMaxOutput = max_output;
     }
 
@@ -197,7 +216,8 @@ public class ProfileFollower {
         final double goal_to_start = mGoal.pos() - mInitialState.pos();
         final double goal_to_actual = mGoal.pos() - mLatestActualState.pos();
         final boolean passed_goal_state = Math.signum(goal_to_start) * Math.signum(goal_to_actual) < 0.0;
+
         return mGoal.atGoalState(mLatestActualState)
-                || (mGoal.completion_behavior() != CompletionBehavior.OVERSHOOT && passed_goal_state);
+               || (mGoal.completion_behavior() != CompletionBehavior.OVERSHOOT && passed_goal_state);
     }
 }

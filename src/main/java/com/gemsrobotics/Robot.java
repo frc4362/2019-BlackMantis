@@ -3,7 +3,6 @@ package com.gemsrobotics;
 import com.gemsrobotics.commands.*;
 import com.gemsrobotics.commands.auton.AutonomousCommandGroup;
 import com.gemsrobotics.commands.auton.DriveForwardCurvePath;
-import com.gemsrobotics.subsystems.lift.Lift;
 import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.camera.Limelight.LEDMode;
 import com.gemsrobotics.util.camera.Limelight.CameraMode;
@@ -16,6 +15,7 @@ import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import org.usfirst.frc.team3310.utility.control.RobotState;
 import org.usfirst.frc.team3310.utility.control.RobotStateEstimator;
 
 public class Robot extends TimedRobot {
@@ -48,7 +48,7 @@ public class Robot extends TimedRobot {
 		m_autonSelector = new SendableChooser<>() {{
 			setDefaultOption("NONE", Commands.nullCommand());
 			addOption("test auton", new AutonomousCommandGroup(m_oi) {{
-				addSequential(new DrivePathAdapativePurePursuitCommand(new DriveForwardCurvePath()));
+				addSequential(new DrivePathAdaptivePurePursuitCommand(new DriveForwardCurvePath()));
 			}});
 		}};
 
@@ -83,6 +83,9 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putBoolean("HIGH GEAR", m_hardware.getChassis().getTransmission().get() == Gear.HIGH);
 		SmartDashboard.putBoolean("hand closed", m_hardware.getManipulator().getHand().get());
 		SmartDashboard.putNumber("Yaw", m_hardware.getAHRS().getYaw());
+
+		final var currentPosition = RobotState.getInstance().getLatestFieldToVehicle().getValue();
+		SmartDashboard.putString("Robot State", currentPosition.toString());
 	}
 
 	private void initOpMode() {

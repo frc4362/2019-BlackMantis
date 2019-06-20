@@ -8,13 +8,13 @@ import org.usfirst.frc.team3310.paths.PathContainer;
 import org.usfirst.frc.team3310.utility.control.*;
 import org.usfirst.frc.team3310.utility.math.Twist2d;
 
-public class DrivePathAdapativePurePursuitCommand extends Command {
+public class DrivePathAdaptivePurePursuitCommand extends Command {
 	private final PathContainer m_pathContainer;
 	private final Path m_path;
 
 	private PathFollower m_follower;
 
-	public DrivePathAdapativePurePursuitCommand(final PathContainer pathContainer) {
+	public DrivePathAdaptivePurePursuitCommand(final PathContainer pathContainer) {
 		m_pathContainer = pathContainer;
 		m_path = pathContainer.buildPath();
 	}
@@ -39,7 +39,8 @@ public class DrivePathAdapativePurePursuitCommand extends Command {
 						Constants.kPathFollowingMaxAccel,
 						Constants.kPathFollowingGoalPosTolerance,
 						Constants.kPathFollowingGoalVelTolerance,
-						Constants.kPathStopSteeringDistance));
+						Constants.kPathStopSteeringDistance)
+		);
 	}
 
 	@Override

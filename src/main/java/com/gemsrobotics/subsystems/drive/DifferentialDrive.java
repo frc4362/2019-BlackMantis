@@ -1,6 +1,5 @@
 package com.gemsrobotics.subsystems.drive;
 
-import com.gemsrobotics.Constants;
 import com.gemsrobotics.OperatorInterface;
 import com.gemsrobotics.commands.OpenLoopDriveCommand;
 import com.gemsrobotics.commands.ShiftScheduler;
@@ -17,13 +16,10 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import jaci.pathfinder.PathfinderFRC;
-import jaci.pathfinder.Trajectory;
 import org.usfirst.frc.team3310.utility.control.RobotStateEstimator;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -78,8 +74,8 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 			m.setIdleMode(CANSparkMax.IdleMode.kBrake);
 			m.setInverted(false);
 
-			m.getEncoder().setVelocityConversionFactor(m_specifications.getEncoderFactor());
-			m.getEncoder().setPositionConversionFactor(m_specifications.getEncoderFactor());
+			m.getEncoder().setVelocityConversionFactor(m_specifications.encoderFactor);
+			m.getEncoder().setPositionConversionFactor(m_specifications.encoderFactor);
 
 			final var pidController = m.getPIDController();
 			m_specifications.pidDrive.configure(pidController, 0);
@@ -117,16 +113,8 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		return Math.abs(v) < LIMIT ? v : LIMIT * Math.signum(v);
 	}
 
-	private static double constrain(
-			final double bot,
-			final double val,
-			final double top
-	) {
+	private static double constrain(final double bot, final double val, final double top) {
 		return max(bot, min(val, top));
-	}
-
-	public void drive(final DrivePower velocity) {
-		curvatureDrive(velocity.linear(), velocity.angular(), false);
 	}
 
 	public void curvatureDrive(
@@ -212,11 +200,6 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		return m_motors.get(side.idx);
 	}
 
-	private double rpm2InPerS(final double rpm) {
-		final double rps = rpm / 60.0;
-		return rps * m_specifications.rotationsToInches(m_transmission);
-	}
-
 	public double getInchesPerSecond(final Side side) {
 		return getMotor(side).getEncoder().getVelocity() * side.encoderMultiplier;
 	}
@@ -269,91 +252,11 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	}
 
 	public static class Specifications {
-		public double width, length, wheelDiameter, maxVelocity,
-				maxAcceleration, maxJerk, quickstopThreshold, turnSensitivity,
-				alpha, kP_Rotational, kFF_Rotational;
-
-		private Trajectory.Config m_config;
+		public double quickstopThreshold,
+				turnSensitivity, alpha,
+				kP_Rotational, kFF_Rotational, encoderFactor;
 
 		public PIDF pidDrive;
-
-		private PIDFVA pidTrajectory;
-
-		public PIDFVA getPIDFVA() {
-			if (pidTrajectory.kV == -1.0) {
-				pidTrajectory.kV = 1 / maxVelocity;
-			}
-
-			return pidTrajectory;
-		}
-
-		public double wheelCircumference() {
-			return Math.PI * wheelDiameter;
-		}
-
-		public double wheelRadius() {
-			return wheelDiameter / 2.0;
-		}
-
-		public double rotationsToInches(final DualTransmission transmission) {
-			// technical debt in the offseason lol
-			return 1.411;
-		}
-
-		public double getEncoderFactor() {
-			return rotationsToInches(null);
-		}
-
-		public Trajectory.Config getTrajectoryConfig() {
-			if (Objects.isNull(m_config)) {
-				m_config = new Trajectory.Config(
-						Trajectory.FitMethod.HERMITE_CUBIC,
-						Trajectory.Config.SAMPLES_FAST,
-						dt,
-						100,
-						PathfinderFRC.DEFAULT_ACC * METER_TO_INCHES,
-						PathfinderFRC.DEFAULT_JERK * METER_TO_INCHES
-				);
-			}
-
-			return m_config;
-		}
-	}
-
-	public static class DrivePower {
-		private final double linear, angular;
-
-		private DrivePower(final double l, final double a) {
-			linear = l;
-			angular = a;
-		}
-
-		public double linear() {
-			return linear;
-		}
-
-		public double angular() {
-			return angular;
-		}
-
-		public double left() {
-			return linear - angular;
-		}
-
-		public double right() {
-			return linear + angular;
-		}
-	}
-
-	public DrivePower wheelVelocity(final double l, final double r) {
-		final double linear = (m_specifications.wheelRadius() * (l + r)) / 2.0,
-				angular = m_specifications.wheelRadius() * (r - l) / m_specifications.width;
-
-		return new DrivePower(linear, angular);
-	}
-
-	public static DrivePower driveVelocity(final double linear, final double angular) {
-		return new DrivePower(linear, angular);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package org.usfirst.frc.team3310.utility.motion;
 
+import static java.lang.Math.abs;
 import static org.usfirst.frc.team3310.utility.Util.epsilonEquals;
 import static org.usfirst.frc.team3310.utility.motion.MotionUtil.kEpsilon;
 
@@ -43,17 +44,21 @@ public class MotionProfile {
      */
     public boolean isValid() {
         MotionSegment prev_segment = null;
-        for (MotionSegment s : mSegments) {
+
+        for (final MotionSegment s : mSegments) {
             if (!s.isValid()) {
                 return false;
             }
+
             if (prev_segment != null && !s.start().coincident(prev_segment.end())) {
                 // Adjacent segments are not continuous.
                 System.err.println("Segments not continuous! End: " + prev_segment.end() + ", Start: " + s.start());
                 return false;
             }
+
             prev_segment = s;
         }
+
         return true;
     }
 
@@ -77,14 +82,17 @@ public class MotionProfile {
         if (t < startTime() && t + kEpsilon >= startTime()) {
             return Optional.of(startState());
         }
+
         if (t > endTime() && t - kEpsilon <= endTime()) {
             return Optional.of(endState());
         }
-        for (MotionSegment s : mSegments) {
+
+        for (final MotionSegment s : mSegments) {
             if (s.containsTime(t)) {
                 return Optional.of(s.start().extrapolate(t));
             }
         }
+
         return Optional.empty();
     }
 
@@ -95,17 +103,19 @@ public class MotionProfile {
      *            The time to query.
      * @return The MotionState at time t, or closest to it if t is outside the profile.
      */
-    public MotionState stateByTimeClamped(double t) {
+    public MotionState stateByTimeClamped(final double t) {
         if (t < startTime()) {
             return startState();
         } else if (t > endTime()) {
             return endState();
         }
-        for (MotionSegment s : mSegments) {
+
+        for (final MotionSegment s : mSegments) {
             if (s.containsTime(t)) {
                 return s.start().extrapolate(t);
             }
         }
+
         // Should never get here.
         return MotionState.kInvalidState;
     }
@@ -119,17 +129,20 @@ public class MotionProfile {
      * @return Empty if the profile never crosses pos or if the profile is invalid, or the resulting MotionState
      *         otherwise.
      */
-    public Optional<MotionState> firstStateByPos(double pos) {
-        for (MotionSegment s : mSegments) {
+    public Optional<MotionState> firstStateByPos(final double pos) {
+        for (final MotionSegment s : mSegments) {
             if (s.containsPos(pos)) {
                 if (epsilonEquals(s.end().pos(), pos, kEpsilon)) {
                     return Optional.of(s.end());
                 }
+
                 final double t = Math.min(s.start().nextTimeAtPos(pos), s.end().t());
+
                 if (Double.isNaN(t)) {
                     System.err.println("Error! We should reach 'pos' but we don't");
                     return Optional.empty();
                 }
+
                 return Optional.of(s.start().extrapolate(t));
             }
         }
@@ -144,18 +157,21 @@ public class MotionProfile {
      * @param t
      *            The query time.
      */
-    public void trimBeforeTime(double t) {
-        for (Iterator<MotionSegment> iterator = mSegments.iterator(); iterator.hasNext();) {
-            MotionSegment s = iterator.next();
+    public void trimBeforeTime(final double t) {
+        for (final Iterator<MotionSegment> iterator = mSegments.iterator(); iterator.hasNext();) {
+            final MotionSegment s = iterator.next();
+
             if (s.end().t() <= t) {
                 // Segment is fully before t.
                 iterator.remove();
                 continue;
             }
+
             if (s.start().t() <= t) {
                 // Segment begins before t; let's shorten the segment.
                 s.setStart(s.start().extrapolate(t));
             }
+
             break;
         }
     }
@@ -174,7 +190,7 @@ public class MotionProfile {
      * @param initial_state
      *            The MotionState to initialize to.
      */
-    public void reset(MotionState initial_state) {
+    public void reset(final MotionState initial_state) {
         clear();
         mSegments.add(new MotionSegment(initial_state, initial_state));
     }
@@ -183,8 +199,9 @@ public class MotionProfile {
      * Remove redundant segments (segments whose start and end states are coincident).
      */
     public void consolidate() {
-        for (Iterator<MotionSegment> iterator = mSegments.iterator(); iterator.hasNext() && mSegments.size() > 1;) {
-            MotionSegment s = iterator.next();
+        for (final Iterator<MotionSegment> iterator = mSegments.iterator(); iterator.hasNext() && mSegments.size() > 1;) {
+            final MotionSegment s = iterator.next();
+
             if (s.start().coincident(s.end())) {
                 iterator.remove();
             }
@@ -200,14 +217,15 @@ public class MotionProfile {
      * @param dt
      *            The period of time to apply the given acceleration.
      */
-    public void appendControl(double acc, double dt) {
+    public void appendControl(final double acc, final double dt) {
         if (isEmpty()) {
             System.err.println("Error!  Trying to append to empty profile");
             return;
         }
-        MotionState last_end_state = mSegments.get(mSegments.size() - 1).end();
-        MotionState new_start_state = new MotionState(last_end_state.t(), last_end_state.pos(), last_end_state.vel(),
-                acc);
+
+        final var last_end_state = mSegments.get(mSegments.size() - 1).end();
+        final var new_start_state = new MotionState(last_end_state.t(), last_end_state.pos(), last_end_state.vel(), acc);
+
         appendSegment(new MotionSegment(new_start_state, new_start_state.extrapolate(new_start_state.t() + dt)));
     }
 
@@ -217,7 +235,7 @@ public class MotionProfile {
      * @param segment
      *            The segment to add.
      */
-    public void appendSegment(MotionSegment segment) {
+    public void appendSegment(final MotionSegment segment) {
         mSegments.add(segment);
     }
 
@@ -227,10 +245,8 @@ public class MotionProfile {
      * @param profile
      *            The profile to add.
      */
-    public void appendProfile(MotionProfile profile) {
-        for (MotionSegment s : profile.segments()) {
-            appendSegment(s);
-        }
+    public void appendProfile(final MotionProfile profile) {
+        profile.segments().forEach(this::appendSegment);
     }
 
     /**
@@ -254,6 +270,7 @@ public class MotionProfile {
         if (isEmpty()) {
             return MotionState.kInvalidState;
         }
+
         return mSegments.get(0).start();
     }
 
@@ -278,6 +295,7 @@ public class MotionProfile {
         if (isEmpty()) {
             return MotionState.kInvalidState;
         }
+
         return mSegments.get(mSegments.size() - 1).end();
     }
 
@@ -307,20 +325,18 @@ public class MotionProfile {
      *         segments, so a reversing profile will count the distance covered in each direction.
      */
     public double length() {
-        double length = 0.0;
-        for (MotionSegment s : segments()) {
-            length += Math.abs(s.end().pos() - s.start().pos());
-        }
-        return length;
+        return segments().stream().mapToDouble(s -> abs(s.end().pos() - s.start().pos())).sum();
     }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("Profile:");
+        final StringBuilder builder = new StringBuilder("Profile:");
+
         for (MotionSegment s : segments()) {
             builder.append("\n\t");
             builder.append(s);
         }
+
         return builder.toString();
     }
 }

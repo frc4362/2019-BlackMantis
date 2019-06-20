@@ -2,6 +2,8 @@ package org.usfirst.frc.team3310.utility.motion;
 
 import java.util.Optional;
 
+import static java.lang.Math.*;
+
 /**
  * A SetpointGenerate does just-in-time motion profile generation to supply a stream of setpoints that obey the given
  * constraints to a controller. The profile is regenerated when any of the inputs change, but is cached (and trimmed as
@@ -30,9 +32,6 @@ public class SetpointGenerator {
     protected MotionProfileGoal mGoal = null;
     protected MotionProfileConstraints mConstraints = null;
 
-    public SetpointGenerator() {
-    }
-
     /**
      * Force a reset of the profile.
      */
@@ -55,15 +54,20 @@ public class SetpointGenerator {
      *            The time to generate a setpoint for.
      * @return The new Setpoint at time t.
      */
-    public synchronized Setpoint getSetpoint(MotionProfileConstraints constraints, MotionProfileGoal goal,
-            MotionState prev_state,
-            double t) {
+    public synchronized Setpoint getSetpoint(
+            final MotionProfileConstraints constraints,
+            final MotionProfileGoal goal,
+            final MotionState prev_state,
+            final double t
+    ) {
         boolean regenerate = mConstraints == null || !mConstraints.equals(constraints) || mGoal == null
                 || !mGoal.equals(goal) || mProfile == null;
+
         if (!regenerate && !mProfile.isEmpty()) {
             Optional<MotionState> expected_state = mProfile.stateByTime(prev_state.t());
-            regenerate = !expected_state.isPresent() || !expected_state.get().equals(prev_state);
+            regenerate = expected_state.isEmpty() || !expected_state.get().equals(prev_state);
         }
+
         if (regenerate) {
             // Regenerate the profile, as our current profile does not satisfy the inputs.
             mConstraints = constraints;
@@ -74,8 +78,10 @@ public class SetpointGenerator {
 
         // Sample the profile at time t.
         Setpoint rv = null;
+
         if (!mProfile.isEmpty() && mProfile.isValid()) {
-            MotionState setpoint;
+            final MotionState setpoint;
+
             if (t > mProfile.endTime()) {
                 setpoint = mProfile.endState();
             } else if (t < mProfile.startTime()) {
@@ -85,6 +91,7 @@ public class SetpointGenerator {
             }
             // Shorten the profile and return the new setpoint.
             mProfile.trimBeforeTime(t);
+
             rv = new Setpoint(setpoint, mProfile.isEmpty() || mGoal.atGoalState(setpoint));
         }
 
@@ -95,9 +102,12 @@ public class SetpointGenerator {
 
         if (rv.final_setpoint) {
             // Ensure the final setpoint matches the goal exactly.
-            rv.motion_state = new MotionState(rv.motion_state.t(), mGoal.pos(),
-                    Math.signum(rv.motion_state.vel()) * Math.max(mGoal.max_abs_vel(), Math.abs(rv.motion_state.vel())),
-                    0.0);
+            rv.motion_state = new MotionState(
+                    rv.motion_state.t(),
+                    mGoal.pos(),
+                    signum(rv.motion_state.vel()) * max(mGoal.max_abs_vel(), abs(rv.motion_state.vel())),
+                    0.0
+            );
         }
 
         return rv;

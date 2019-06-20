@@ -26,7 +26,7 @@ public class MotionProfileGoal {
      * VIOLATE_MAX_ABS_VEL - If the max velocity is just a general guideline and not a hard performance limit, it's
      * better to slightly exceed it to avoid skidding wheels.
      */
-    public static enum CompletionBehavior {
+    public enum CompletionBehavior {
         // Overshoot the goal if necessary (at a velocity greater than max_abs_vel) and come back.
         // Only valid if the goal velocity is 0.0 (otherwise VIOLATE_MAX_ACCEL will be used).
         OVERSHOOT,
@@ -43,30 +43,36 @@ public class MotionProfileGoal {
     protected double pos_tolerance = 1E-3;
     protected double vel_tolerance = 1E-2;
 
-    public MotionProfileGoal() {
-    }
-
-    public MotionProfileGoal(double pos) {
+    public MotionProfileGoal(final double pos) {
         this.pos = pos;
         this.max_abs_vel = 0.0;
         sanityCheck();
     }
 
-    public MotionProfileGoal(double pos, double max_abs_vel) {
+    public MotionProfileGoal(final double pos, final double max_abs_vel) {
         this.pos = pos;
         this.max_abs_vel = max_abs_vel;
         sanityCheck();
     }
 
-    public MotionProfileGoal(double pos, double max_abs_vel, CompletionBehavior completion_behavior) {
+    public MotionProfileGoal(
+            final double pos,
+            final double max_abs_vel,
+            final CompletionBehavior completion_behavior
+    ) {
         this.pos = pos;
         this.max_abs_vel = max_abs_vel;
         this.completion_behavior = completion_behavior;
         sanityCheck();
     }
 
-    public MotionProfileGoal(double pos, double max_abs_vel, CompletionBehavior completion_behavior,
-            double pos_tolerance, double vel_tolerance) {
+    public MotionProfileGoal(
+            final double pos,
+            final double max_abs_vel,
+            final CompletionBehavior completion_behavior,
+            final double pos_tolerance,
+            final double vel_tolerance
+    ) {
         this.pos = pos;
         this.max_abs_vel = max_abs_vel;
         this.completion_behavior = completion_behavior;
@@ -75,7 +81,7 @@ public class MotionProfileGoal {
         sanityCheck();
     }
 
-    public MotionProfileGoal(MotionProfileGoal other) {
+    public MotionProfileGoal(final MotionProfileGoal other) {
         this(other.pos, other.max_abs_vel, other.completion_behavior, other.pos_tolerance, other.vel_tolerance);
     }
 
@@ -106,12 +112,12 @@ public class MotionProfileGoal {
         return completion_behavior;
     }
 
-    public boolean atGoalState(MotionState state) {
+    public boolean atGoalState(final MotionState state) {
         return atGoalPos(state.pos()) && (Math.abs(state.vel()) < (max_abs_vel + vel_tolerance)
                 || completion_behavior == CompletionBehavior.VIOLATE_MAX_ABS_VEL);
     }
 
-    public boolean atGoalPos(double pos) {
+    public boolean atGoalPos(final double pos) {
         return epsilonEquals(pos, this.pos, pos_tolerance);
     }
 
@@ -131,11 +137,13 @@ public class MotionProfileGoal {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (!(obj instanceof MotionProfileGoal)) {
             return false;
         }
+
         final MotionProfileGoal other = (MotionProfileGoal) obj;
+
         return (other.completion_behavior() == completion_behavior()) && (other.pos() == pos())
                 && (other.max_abs_vel() == max_abs_vel()) && (other.pos_tolerance() == pos_tolerance())
                 && (other.vel_tolerance() == vel_tolerance());

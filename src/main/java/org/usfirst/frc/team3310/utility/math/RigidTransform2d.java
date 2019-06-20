@@ -10,7 +10,7 @@ import static org.usfirst.frc.team3310.utility.Util.epsilonEquals;
 public class RigidTransform2d implements Interpolable<RigidTransform2d> {
     protected static final double kEpsilon = 1E-9;
 
-    public static final RigidTransform2d identity() {
+    public static RigidTransform2d identity() {
         return new RigidTransform2d();
     }
 
@@ -24,21 +24,21 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
         rotation_ = new Rotation2d();
     }
 
-    public RigidTransform2d(Translation2d translation, Rotation2d rotation) {
+    public RigidTransform2d(final Translation2d translation, final Rotation2d rotation) {
         translation_ = translation;
         rotation_ = rotation;
     }
 
-    public RigidTransform2d(RigidTransform2d other) {
+    public RigidTransform2d(final RigidTransform2d other) {
         translation_ = new Translation2d(other.translation_);
         rotation_ = new Rotation2d(other.rotation_);
     }
 
-    public static RigidTransform2d fromTranslation(Translation2d translation) {
+    public static RigidTransform2d fromTranslation(final Translation2d translation) {
         return new RigidTransform2d(translation, new Rotation2d());
     }
 
-    public static RigidTransform2d fromRotation(Rotation2d rotation) {
+    public static RigidTransform2d fromRotation(final Rotation2d rotation) {
         return new RigidTransform2d(new Translation2d(), rotation);
     }
 
@@ -46,10 +46,11 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
      * Obtain a new RigidTransform2d from a (constant curvature) velocity. See:
      * https://github.com/strasdat/Sophus/blob/master/sophus/se2.hpp
      */
-    public static RigidTransform2d exp(Twist2d delta) {
+    public static RigidTransform2d exp(final Twist2d delta) {
         double sin_theta = Math.sin(delta.dtheta);
         double cos_theta = Math.cos(delta.dtheta);
         double s, c;
+
         if (Math.abs(delta.dtheta) < kEps) {
             s = 1.0 - 1.0 / 6.0 * delta.dtheta * delta.dtheta;
             c = .5 * delta.dtheta;
@@ -57,6 +58,7 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
             s = sin_theta / delta.dtheta;
             c = (1.0 - cos_theta) / delta.dtheta;
         }
+
         return new RigidTransform2d(new Translation2d(delta.dx * s - delta.dy * c, delta.dx * c + delta.dy * s),
                 new Rotation2d(cos_theta, sin_theta, false));
     }
@@ -64,18 +66,22 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
     /**
      * Logical inverse of the above.
      */
-    public static Twist2d log(RigidTransform2d transform) {
+    public static Twist2d log(final RigidTransform2d transform) {
         final double dtheta = transform.getRotation().getRadians();
         final double half_dtheta = 0.5 * dtheta;
         final double cos_minus_one = transform.getRotation().cos() - 1.0;
+
         double halftheta_by_tan_of_halfdtheta;
+
         if (Math.abs(cos_minus_one) < kEps) {
             halftheta_by_tan_of_halfdtheta = 1.0 - 1.0 / 12.0 * dtheta * dtheta;
         } else {
             halftheta_by_tan_of_halfdtheta = -(half_dtheta * transform.getRotation().sin()) / cos_minus_one;
         }
-        final Translation2d translation_part = transform.getTranslation()
-                .rotateBy(new Rotation2d(halftheta_by_tan_of_halfdtheta, -half_dtheta, false));
+
+        final var translation_part = transform.getTranslation()
+                     .rotateBy(new Rotation2d(halftheta_by_tan_of_halfdtheta, -half_dtheta, false));
+
         return new Twist2d(translation_part.x(), translation_part.y(), dtheta);
     }
 
@@ -83,7 +89,7 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
         return translation_;
     }
 
-    public void setTranslation(Translation2d translation) {
+    public void setTranslation(final Translation2d translation) {
         translation_ = translation;
     }
 
@@ -91,7 +97,7 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
         return rotation_;
     }
 
-    public void setRotation(Rotation2d rotation) {
+    public void setRotation(final Rotation2d rotation) {
         rotation_ = rotation;
     }
 
@@ -103,7 +109,7 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
      *            The other transform.
      * @return This transform * other
      */
-    public RigidTransform2d transformBy(RigidTransform2d other) {
+    public RigidTransform2d transformBy(final RigidTransform2d other) {
         return new RigidTransform2d(translation_.translateBy(other.translation_.rotateBy(rotation_)),
                 rotation_.rotateBy(other.rotation_));
     }
@@ -126,12 +132,14 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
      * Finds the point where the heading of this transform intersects the heading of another. Returns (+INF, +INF) if
      * parallel.
      */
-    public Translation2d intersection(RigidTransform2d other) {
+    public Translation2d intersection(final RigidTransform2d other) {
         final Rotation2d other_rotation = other.getRotation();
+
         if (rotation_.isParallel(other_rotation)) {
             // Lines are parallel.
             return new Translation2d(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
         }
+
         if (Math.abs(rotation_.cos()) < Math.abs(other_rotation.cos())) {
             return intersectionInternal(this, other);
         } else {
@@ -142,20 +150,20 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
     /**
      * Return true if the heading of this transform is colinear with the heading of another.
      */
-    public boolean isColinear(RigidTransform2d other) {
+    public boolean isColinear(final RigidTransform2d other) {
         final Twist2d twist = log(inverse().transformBy(other));
         return (epsilonEquals(twist.dy, 0.0, kEpsilon) && epsilonEquals(twist.dtheta, 0.0, kEpsilon));
     }
 
-    private static Translation2d intersectionInternal(RigidTransform2d a, RigidTransform2d b) {
+    private static Translation2d intersectionInternal(final RigidTransform2d a, final RigidTransform2d b) {
         final Rotation2d a_r = a.getRotation();
         final Rotation2d b_r = b.getRotation();
         final Translation2d a_t = a.getTranslation();
         final Translation2d b_t = b.getTranslation();
 
         final double tan_b = b_r.tan();
-        final double t = ((a_t.x() - b_t.x()) * tan_b + b_t.y() - a_t.y())
-                / (a_r.sin() - a_r.cos() * tan_b);
+        final double t = ((a_t.x() - b_t.x()) * tan_b + b_t.y() - a_t.y()) / (a_r.sin() - a_r.cos() * tan_b);
+
         return a_t.translateBy(a_r.toTranslation().scale(t));
     }
 
@@ -163,13 +171,15 @@ public class RigidTransform2d implements Interpolable<RigidTransform2d> {
      * Do twist interpolation of this transform assuming constant curvature.
      */
     @Override
-    public RigidTransform2d interpolate(RigidTransform2d other, double x) {
+    public RigidTransform2d interpolate(final RigidTransform2d other, final double x) {
         if (x <= 0) {
             return new RigidTransform2d(this);
         } else if (x >= 1) {
             return new RigidTransform2d(other);
         }
+
         final Twist2d twist = RigidTransform2d.log(inverse().transformBy(other));
+
         return transformBy(RigidTransform2d.exp(twist.scaled(x)));
     }
 
