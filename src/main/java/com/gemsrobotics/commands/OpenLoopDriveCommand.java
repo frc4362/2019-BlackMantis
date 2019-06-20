@@ -20,7 +20,7 @@ import java.util.Queue;
 import static java.lang.Math.*;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
-public class DriveCommand extends Command {
+public class OpenLoopDriveCommand extends Command {
 	private static final double kP = 1.3;
 	private static final double SLOWDOWN_PERCENT = 0.5;
 	public static final double ADJUSTMENT_THRESHOLD = 0.2;
@@ -36,7 +36,7 @@ public class DriveCommand extends Command {
 
 	private boolean m_isApproachingLast;
 
-	public DriveCommand(
+	public OpenLoopDriveCommand(
 			final DifferentialDrive chassis,
 			final Limelight limelight,
 			final OperatorInterface oi,

@@ -65,13 +65,13 @@ public class AutoPickupCommand extends Command {
 
 		if (area > m_cfg.slowdownCloseThreshold && m_state == State.APPROACHING) {
 			m_state = State.READY_TO_EXTEND;
-			m_manipulator.getHand().set(true);
+			m_manipulator.getArm().set(true);
 			m_lastOpenTime = System.currentTimeMillis();
 		}
 
 		if (area > m_cfg.slowdownExtendThreshold && m_state == State.READY_TO_EXTEND) {
 			m_state = State.READY_FOR_PICKUP;
-			m_manipulator.getArm().set(true);
+			m_manipulator.getHand().set(true);
 		}
 
 		if (area > m_cfg.slowdownOpenThreshold && m_state == State.READY_FOR_PICKUP
@@ -79,6 +79,7 @@ public class AutoPickupCommand extends Command {
 			m_state = State.READY_FOR_DEPARTURE;
 			// probably keep this here
 			Scheduler.getInstance().add(makeBackupCommand());
+			m_manipulator.getArm().set(false);
 			m_manipulator.getHand().set(false);
 		}
 
@@ -91,7 +92,7 @@ public class AutoPickupCommand extends Command {
 
 		if (area < m_cfg.slowdownPickupThreshold && m_state == State.READY_FOR_DEPARTURE) {
 			m_isFinished = true;
-			m_manipulator.getArm().set(false);
+//			m_manipulator.getArm().set(false);
 		}
 	}
 
@@ -99,9 +100,7 @@ public class AutoPickupCommand extends Command {
 		final var backupTrajectory = Collections.nCopies(BACKUP_TICKS, BACKWARDS_VELOCITY);
 
 		if (m_enableBackup) {
-			return commandGroupOf(
-					new Wait(400),
-					commandOf(() -> m_driveTrain.getDriveCommand().queue(backupTrajectory)));
+			return commandOf(() -> m_driveTrain.getDriveCommand().queue(backupTrajectory));
 		} else {
 			return nullCommand();
 		}

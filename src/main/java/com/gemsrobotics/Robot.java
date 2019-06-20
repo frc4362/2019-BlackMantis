@@ -1,23 +1,32 @@
 package com.gemsrobotics;
 
 import com.gemsrobotics.commands.*;
+import com.gemsrobotics.commands.auton.AutonomousCommandGroup;
+import com.gemsrobotics.commands.auton.DriveForwardCurvePath;
+import com.gemsrobotics.subsystems.lift.Lift;
 import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.camera.Limelight.LEDMode;
 import com.gemsrobotics.util.camera.Limelight.CameraMode;
+import com.gemsrobotics.util.command.Commands;
 import com.gemsrobotics.util.command.loggers.LimelightLogger;
 import com.revrobotics.CANSparkMax.IdleMode;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import org.usfirst.frc.team3310.utility.control.RobotStateEstimator;
 
 public class Robot extends TimedRobot {
 	private OperatorInterface m_oi;
 	private Hardware m_hardware;
-	private SendableChooser<Boolean> m_compressorToggler;
+	private LEDController m_ledController;
+	private SendableChooser<Boolean> m_compressorToggler, m_slideToggler;
+	private SendableChooser<Command> m_autonSelector;
 
-	private boolean m_isFieldMatch;
+	private Command m_selectedAuton;
+	private boolean m_hasAutonFinished, m_isFieldMatch;
 
 	@Override
 	public void robotInit() {
@@ -31,6 +40,18 @@ public class Robot extends TimedRobot {
 			addOption("Compressor ON", true);
 		}};
 
+		m_slideToggler = new SendableChooser<>() {{
+			setDefaultOption("Linear Slide ON", true);
+			addOption("Linear Slide OFF", false);
+		}};
+
+		m_autonSelector = new SendableChooser<>() {{
+			setDefaultOption("NONE", Commands.nullCommand());
+			addOption("test auton", new AutonomousCommandGroup(m_oi) {{
+				addSequential(new DrivePathAdapativePurePursuitCommand(new DriveForwardCurvePath()));
+			}});
+		}};
+
 		final var driveTrainToggler = new SendableChooser<Boolean>() {{
 			setDefaultOption("Drive Train ON", true);
 			addOption("Drive Train OFF", false);
@@ -38,6 +59,8 @@ public class Robot extends TimedRobot {
 
 		SmartDashboard.putData("Compressor", m_compressorToggler);
 		SmartDashboard.putData("Drive", driveTrainToggler);
+		SmartDashboard.putData("Linear Slide", m_slideToggler);
+		SmartDashboard.putData("Auton Selector", m_autonSelector);
 
 		final var limelight = m_hardware.getLimelight();
 		limelight.setCameraMode(CameraMode.CV);
@@ -45,18 +68,24 @@ public class Robot extends TimedRobot {
 		final var chassis = m_hardware.getChassis();
 		chassis.getTransmission().set(Gear.LOW);
 		chassis.configureDriveCommand(limelight, m_oi, driveTrainToggler);
+
+		m_ledController = new LEDController(m_oi.getController());
+
+		m_hardware.getAHRS().reset();
 	}
 
 	@Override
 	public void robotPeriodic() {
-		SmartDashboard.putBoolean("HIGH GEAR", m_hardware.getChassis().getTransmission().get() == Gear.HIGH);
+		m_ledController.writePeriodicOutputs();
+
 		m_hardware.getCompressor().setClosedLoopControl(m_compressorToggler.getSelected());
 
-		// TODO
-//		m_hardware.getLights().update();
+		SmartDashboard.putBoolean("HIGH GEAR", m_hardware.getChassis().getTransmission().get() == Gear.HIGH);
+		SmartDashboard.putBoolean("hand closed", m_hardware.getManipulator().getHand().get());
+		SmartDashboard.putNumber("Yaw", m_hardware.getAHRS().getYaw());
 	}
 
-	private void initDriverControl() {
+	private void initOpMode() {
 		m_isFieldMatch = m_ds.isFMSAttached();
 
 		m_oi.resetControls();
@@ -65,11 +94,11 @@ public class Robot extends TimedRobot {
 		m_hardware.getBackLegs().set(DoubleSolenoid.Value.kForward);
 		m_hardware.getStage1Solenoid().set(false);
 
-		final var controller = m_oi.getController();
-
 		final var limelight = m_hardware.getLimelight();
 		limelight.setLEDMode(LEDMode.ON);
 		Scheduler.getInstance().add(new LimelightLogger(limelight));
+
+		final var controller = m_oi.getController();
 
 		final var lift = m_hardware.getLift();
 		lift.setIdleMode(IdleMode.kBrake);
@@ -77,26 +106,26 @@ public class Robot extends TimedRobot {
 		Scheduler.getInstance().add(new LiftUnstucker(lift));
 		Scheduler.getInstance().add(lift.makeLogger());
 
+		Scheduler.getInstance().add(RobotStateEstimator.getInstance());
+
 		final var chassis = m_hardware.getChassis();
 		chassis.getMotors().forEach(motor ->
 			motor.setIdleMode(IdleMode.kBrake));
-		Scheduler.getInstance().add(chassis.getStateEstimator());
-		Scheduler.getInstance().add(chassis.getState().makeLogger());
-		Scheduler.getInstance().add(chassis.getDriveCommand());
-		Scheduler.getInstance().add(m_hardware.getInventory().makeLogger());
-		Scheduler.getInstance().add(new LEDListener(
-				m_hardware.getLEDs(),
-				m_oi.getController(),
-				limelight,
-				m_hardware.getInventory()));
-		Scheduler.getInstance().add(new VisionAdjuster(
-				m_hardware.getLateralAdjuster(),
-				limelight,
-				m_hardware.getInventory(),
-				m_oi.getController(),
-				m_hardware.getLift()));
+
+		if (m_slideToggler.getSelected()) {
+			Scheduler.getInstance().add(new VisionAdjuster(
+					m_hardware.getLateralAdjuster(),
+					limelight,
+					m_hardware.getInventory(),
+					m_oi.getController(),
+					m_hardware.getLift()));
+		}
+	}
+
+	private void initDriverControl() {
+		Scheduler.getInstance().add(Hardware.getInstance().getChassis().getDriveCommand());
 		Scheduler.getInstance().add(new CargoHeightBoostListener(
-				lift,
+				Hardware.getInstance().getLift(),
 				m_hardware.getManipulator(),
 				m_hardware.getInventory()));
 	}
@@ -104,18 +133,27 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		Scheduler.getInstance().removeAll();
-		initDriverControl();
-		m_hardware.getLimelight().setLEDMode(LEDMode.ON);
+		initOpMode();
+
+		m_selectedAuton = m_autonSelector.getSelected();
+		m_hasAutonFinished = false;
+		Scheduler.getInstance().add(m_selectedAuton);
 	}
 
 	@Override
 	public void autonomousPeriodic() {
 		Scheduler.getInstance().run();
+
+		if (m_selectedAuton.isCompleted() && !m_hasAutonFinished) {
+			m_hasAutonFinished = true;
+			initDriverControl();
+		}
 	}
 
 	@Override
 	public void teleopInit() {
 		Scheduler.getInstance().removeAll();
+		initOpMode();
 		initDriverControl();
 		m_hardware.getLimelight().setLEDMode(LEDMode.ON);
 		Scheduler.getInstance().add(m_hardware.getChassis().getShiftScheduler());

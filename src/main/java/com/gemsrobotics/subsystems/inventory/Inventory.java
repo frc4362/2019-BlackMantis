@@ -27,28 +27,4 @@ public abstract class Inventory {
 			return GamePiece.NONE;
 		}
 	}
-
-	private static class InventoryLogger extends Command {
-		private final Inventory m_inventory;
-
-		@SuppressWarnings("WeakerAccess")
-		public InventoryLogger(final Inventory inventory) {
-			m_inventory = inventory;
-		}
-
-		@Override
-		public void execute() {
-			SmartDashboard.putString("Current Game Piece", m_inventory.getCurrentPiece().toString());
-			SmartDashboard.putBoolean("Cargo Raw Reading", m_inventory.hasCargo());
-		}
-
-		@Override
-		public boolean isFinished() {
-			return false;
-		}
-	}
-
-	public Command makeLogger() {
-		return new InventoryLogger(this);
-	}
 }

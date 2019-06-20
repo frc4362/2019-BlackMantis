@@ -33,11 +33,7 @@ public class AutoPlaceFactory {
 		m_positionReady = new HashMap<>();
 	}
 
-	public Command makeAutoPlace(
-			final Lift.Position position,
-			final boolean openAfterFinish,
-			final XboxController controller
-	) {
+	public Command makeAutoPlace(final Lift.Position position, final boolean openAfterFinish) {
 		final var currentTime = System.currentTimeMillis();
 
 		final Command ret;

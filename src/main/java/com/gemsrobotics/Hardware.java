@@ -1,5 +1,6 @@
 package com.gemsrobotics;
 
+import com.ctre.phoenix.CANifier;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjuster;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjusterConfig;
@@ -31,11 +32,11 @@ public class Hardware {
 	private final Limelight m_limelight;
 	private final Inventory m_inventory;
 	private final MyAHRS m_ahrs;
-	private final Relay m_leds;
 	private final PTO m_pto;
 	private final DoubleSolenoid m_legsBack;
 	private final Solenoid m_legsFront;
 	private final WPI_TalonSRX m_rollers;
+	private final CANifier m_canifier;
 
 	private static Hardware INSTANCE;
 
@@ -54,13 +55,11 @@ public class Hardware {
 				liftCfg = getConfig("lift"),
 				manipulatorCfgRaw = getConfig("manipulator"),
 				inventoryCfg = getConfig("inventory"),
-				ledsCfg = getConfig("relay"),
 				lateralCfg = getConfig("lateralAdjuster"),
 				ptoCfg = getConfig("pto");
 
 		final var reflectiveCfg = inventoryCfg.to(ReflectiveInventoryConfig.class);
 		m_inventory = new ReflectiveInventory(reflectiveCfg.port);
-		m_leds = new Relay(ledsCfg.getLong("port").intValue());
 		m_limelight = new Limelight();
 		m_compressor = new Compressor();
 		m_lift = new Lift(liftCfg.to(LiftConfig.class));
@@ -77,11 +76,13 @@ public class Hardware {
 		final var shifter = new Solenoid(shifterCfg.getLong("port").intValue());
 		m_chassis = new DifferentialDrive(
 				driveCfg.getTable("ports").to(DrivePorts.class),
-				driveCfg.getTable("localizations").to(DifferentialDrive.Specifications.class),
+				driveCfg.getTable("specifications").to(DifferentialDrive.Specifications.class),
 				shifter,
 				m_ahrs,
 				false
 		);
+
+		m_canifier = new CANifier(60);
 	}
 
 	public DifferentialDrive getChassis() {
@@ -112,10 +113,6 @@ public class Hardware {
 		return m_ahrs;
 	}
 
-	public Relay getLEDs() {
-		return m_leds;
-	}
-
 	public LateralAdjuster getLateralAdjuster() {
 		return m_lateral;
 	}
@@ -134,5 +131,9 @@ public class Hardware {
 
 	public WPI_TalonSRX getRollers() {
 		return m_rollers;
+	}
+
+	public CANifier getCANifier() {
+		return m_canifier;
 	}
 }
