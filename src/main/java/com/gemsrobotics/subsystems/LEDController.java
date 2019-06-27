@@ -1,4 +1,4 @@
-package com.gemsrobotics.commands;
+package com.gemsrobotics.subsystems;
 
 import com.ctre.phoenix.CANifier;
 import com.gemsrobotics.Hardware;
@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj.XboxController;
 
 import java.awt.*;
 
-import static java.lang.Math.floor;
 import static java.lang.Math.sin;
 
 public class LEDController {
@@ -38,18 +37,18 @@ public class LEDController {
     }
 
     public void writePeriodicOutputs() {
-        final var isAttemptingPickup = m_controller.getPOV() == Gemstick.POVState.W.getValue();
+        final var isAttemptingPickup = m_controller.getPOV() == Gemstick.POVState.W.toDegrees();
         final var isHighGear = m_chassis.getTransmission().get() == DualTransmission.Gear.HIGH;
 
         if (DriverStation.getInstance().isDisabled()) { // softly breathe while disabled
-            setLEDColor(Color.PINK, 0.3 * calculatePulseIntensity(6));
+            setLEDColor(Color.PINK, 0.2 * calculatePulseIntensity(5.5));
         } else if (isHighGear) {
             setLEDColor(Color.RED, 0.3);
         } else if (m_inventory.hasCargo()) {
             setLEDColor(Color.RED, 1.0);
         } else if (isAttemptingPickup) { // pulse if attempting pickup but no target, otherwise hold solid
             final var isTargetPresent = m_limelight.isTargetPresent();
-            setLEDColor(Color.ORANGE, isTargetPresent ? 1.0 : 0.7 * calculatePulseIntensity(1.25));
+            setLEDColor(Color.CYAN, isTargetPresent ? 1.0 : 0.7 * calculatePulseIntensity(0.25));
         } else if (Hardware.getInstance().getManipulator().getHand().get()) { // flash bright yellow when hand is closed
             setLEDColor(Color.YELLOW, 1.0);
         } else {
@@ -60,6 +59,10 @@ public class LEDController {
     private double calculatePulseIntensity(final double wavelengthSeconds) {
         return (sin(Timer.getFPGATimestamp() / wavelengthSeconds) + 1) / 2;
     }
+
+//    private Color getRainbowColor(final double wavelength) {
+//
+//    }
 
     private void setLEDColor(final Color color, final double intensity) {
         if (!m_lastColor.equals(color) || m_lastIntensity != intensity) {

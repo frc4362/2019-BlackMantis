@@ -72,9 +72,9 @@ public final class OperatorInterface {
 		m_rollerListener = new ClimberRollerListener(hw.getRollers(), m_controller);
 
 		stage1ExtendButton.whenPressed(() ->
-			hw.getStage1Solenoid().set(true));
+			hw.getCargoIntake().set(true));
 		stage1ExtendButton.whenReleased(() ->
-			hw.getStage1Solenoid().set(false));
+			hw.getCargoIntake().set(false));
 
 		final Trigger ptoDeployButton = new Trigger() {
 			@Override
@@ -117,7 +117,7 @@ public final class OperatorInterface {
 		m_manipulator = hw.getManipulator();
 		m_lift = hw.getLift();
 
-		final var stage1 = hw.getStage1Solenoid();
+		final var stage1 = hw.getCargoIntake();
 
 		intakeButton.whenPressed(() -> {
 			if (m_lift.getPosition() > m_lift.heightRotations(Lift.Position.STAGE1_RETRACT_DISTANCE)) {
@@ -213,8 +213,7 @@ public final class OperatorInterface {
 					} else {
 						panelPlacementCommand[0] = autoPlaceFactory.makeAutoPlace(
 								panelPosition,
-								false,
-								m_controller);
+								false);
 
 						if (!Objects.isNull(panelPlacementCommand[0])) {
 							Scheduler.getInstance().add(panelPlacementCommand[0]);

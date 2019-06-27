@@ -46,7 +46,7 @@ public class CargoHeightBoostListener extends Command {
 
 		if (m_ticksToDelay == 0) {
 			m_lift.setPosition(Lift.Position.CARGO_1);
-			Hardware.getInstance().getStage1Solenoid().set(false);
+			Hardware.getInstance().getCargoIntake().set(false);
 			Hardware.getInstance().getManipulator().setSetSpeed(Manipulator.RunMode.NEUTRAL);
 			m_ticksToDelay = -1;
 		} else if (m_ticksToDelay > 0) {

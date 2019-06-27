@@ -1,7 +1,7 @@
 package com.gemsrobotics;
 
 import com.ctre.phoenix.CANifier;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjuster;
 import com.gemsrobotics.subsystems.adjuster.LateralAdjusterConfig;
 import com.gemsrobotics.subsystems.inventory.*;
@@ -15,6 +15,7 @@ import com.gemsrobotics.subsystems.pto.PTO;
 import com.gemsrobotics.subsystems.pto.PTOConfig;
 import com.gemsrobotics.util.MyAHRS;
 import com.gemsrobotics.util.camera.Limelight;
+import com.gemsrobotics.util.drivers.LazyTalonSRX;
 import edu.wpi.first.wpilibj.*;
 import com.moandjiezana.toml.Toml;
 
@@ -35,7 +36,7 @@ public class Hardware {
 	private final PTO m_pto;
 	private final DoubleSolenoid m_legsBack;
 	private final Solenoid m_legsFront;
-	private final WPI_TalonSRX m_rollers;
+	private final TalonSRX m_rollers;
 	private final CANifier m_canifier;
 
 	private static Hardware INSTANCE;
@@ -70,7 +71,7 @@ public class Hardware {
 		m_legsFront = new Solenoid(manipulatorConfig.extenderPort);
 		m_legsBack = new DoubleSolenoid(6, 7);
 		m_pto = new PTO(ptoCfg.to(PTOConfig.class));
-		m_rollers = new WPI_TalonSRX(7);
+		m_rollers = new LazyTalonSRX(7);
 		m_lateral = new LateralAdjuster(lateralCfg.to(LateralAdjusterConfig.class));
 
 		final var shifter = new Solenoid(shifterCfg.getLong("port").intValue());
@@ -78,8 +79,7 @@ public class Hardware {
 				driveCfg.getTable("ports").to(DrivePorts.class),
 				driveCfg.getTable("specifications").to(DifferentialDrive.Specifications.class),
 				shifter,
-				m_ahrs,
-				false
+				m_ahrs
 		);
 
 		m_canifier = new CANifier(60);
@@ -125,11 +125,11 @@ public class Hardware {
 		return m_legsBack;
 	}
 
-	public Solenoid getStage1Solenoid() {
+	public Solenoid getCargoIntake() {
 		return m_legsFront;
 	}
 
-	public WPI_TalonSRX getRollers() {
+	public TalonSRX getRollers() {
 		return m_rollers;
 	}
 

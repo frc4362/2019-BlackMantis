@@ -19,9 +19,9 @@ public class Constants {
     public static double kDriveLowGearMaxSpeedInchesPerSec = 12.0 * 10.0;
 
     // Geometry
-    public static double kCenterToFrontBumperDistance = 16.33;
-    public static double kCenterToRearBumperDistance = 16.99;
-    public static double kCenterToSideBumperDistance = 17.225;
+    public static double kCenterToFrontBumperDistance = 19.25;
+    public static double kCenterToRearBumperDistance = 19.25;
+    public static double kCenterToSideBumperDistance = 17.125;
 
     /* CONTROL LOOP GAINS */
 
@@ -84,12 +84,12 @@ public class Constants {
 
     public static double kSegmentCompletionTolerance = 0.1; // inches
     public static double kPathFollowingMaxAccel = 90.0; // inches per second^2
-    public static double kPathFollowingMaxVel = 150.0; // inches per second
+    public static double kPathFollowingMaxVel = 120.0; // inches per second
     public static double kPathFollowingProfileKp = 5.0;  //5.0
     public static double kPathFollowingProfileKi = 0.03;  // 0.03
-    public static double kPathFollowingProfileKv = 0.02; //0.02
+    public static double kPathFollowingProfileKv = 0.0083; //0.02
     public static double kPathFollowingProfileKffv = 1.2;  //1.2
-    public static double kPathFollowingProfileKffa = 0.05;  //0.05
+    public static double kPathFollowingProfileKffa = 0.002;  //0.05
     public static double kPathFollowingGoalPosTolerance = 0.75;
     public static double kPathFollowingGoalVelTolerance = 12.0;
     public static double kPathStopSteeringDistance = 9.0;

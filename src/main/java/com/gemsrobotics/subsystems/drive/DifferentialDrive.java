@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import org.usfirst.frc.team3310.utility.control.RobotStateEstimator;
+import org.usfirst.frc.team3310.utility.math.Rotation2d;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +31,6 @@ import static java.lang.Math.min;
 public final class DifferentialDrive extends Subsystem implements Sendable {
 	public static final double dt = 0.02;
 
-	private static final double METER_TO_INCHES = 0.0254;
 	private static final double DEGREES_THRESHOLD = 3.5;
 
 	private final Specifications m_specifications;
@@ -51,14 +51,14 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 			final DrivePorts drivePorts,
 			final Specifications specifications,
 			final Solenoid shifter,
-			final MyAHRS ahrs,
-			final boolean useVelocityControl
+			final MyAHRS ahrs
 	) {
-		final Integer[] ports = drivePorts.get();
-		m_ahrs = ahrs;
 		m_specifications = specifications;
+		m_ahrs = ahrs;
 		m_transmission = new DualTransmission(shifter);
 		m_shiftScheduler = new ShiftScheduler(this);
+
+		final Integer[] ports = drivePorts.get();
 
 		if (ports.length != 4) {
 			throw new RuntimeException("Wrong number of ports!");
@@ -68,19 +68,20 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 				.map(port -> new CANSparkMax(port, MotorType.kBrushless))
 				.collect(Collectors.toList());
 
-		m_motors.get(1).follow(m_motors.get(0));
-		m_motors.get(3).follow(m_motors.get(2));
 		m_motors.forEach(m -> {
 			m.setIdleMode(CANSparkMax.IdleMode.kBrake);
 			m.setInverted(false);
 
 			m.getEncoder().setVelocityConversionFactor(m_specifications.encoderFactor);
-			m.getEncoder().setPositionConversionFactor(m_specifications.encoderFactor);
+			m.getEncoder().setPositionConversionFactor(m_specifications.encoderFactor * 60);
 
 			final var pidController = m.getPIDController();
 			m_specifications.pidDrive.configure(pidController, 0);
 			pidController.setOutputRange(-1.0, +1.0);
 		});
+
+		m_motors.get(1).follow(m_motors.get(0));
+		m_motors.get(3).follow(m_motors.get(2));
 
 		m_accumulator = 0.0;
 	}
@@ -93,13 +94,15 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		m_driveCommand = new OpenLoopDriveCommand(this, limelight, controls, toggler);
 	}
 
-	public void setVelocitySetpoints(final double setpointLeft, final double setpointRight) {
+	final double MAGIC_ENCODER_NUMBER = 1.3631;
+
+	public void setVelocityReferences(final double setpointLeft, final double setpointRight) {
 		final double maxDesiredVelocity = max(abs(setpointLeft), abs(setpointRight));
-		final double maxSetpointVelocity = m_transmission.get().topSpeed;
+		final double maxSetpointVelocity = m_transmission.get().topSpeed; // magic numbeeeeer
 		final double scale = maxDesiredVelocity > maxSetpointVelocity ? maxSetpointVelocity / maxDesiredVelocity : 1.0;
 
-		getMotor(Side.LEFT).getPIDController().setReference(setpointLeft * scale, ControlType.kVelocity, 0);
-		getMotor(Side.RIGHT).getPIDController().setReference(setpointRight * scale, ControlType.kVelocity, 0);
+		getMotor(Side.LEFT).getPIDController().setReference(setpointLeft * scale * MAGIC_ENCODER_NUMBER, ControlType.kVelocity, 0);
+		getMotor(Side.RIGHT).getPIDController().setReference(-setpointRight * scale * MAGIC_ENCODER_NUMBER, ControlType.kVelocity, 0);
 	}
 
 	public void drive(final double leftPower, final double rightPower) {
@@ -110,7 +113,7 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 	private static final double LIMIT = 1.0;
 
 	private static double limit(final double v) {
-		return Math.abs(v) < LIMIT ? v : LIMIT * Math.signum(v);
+		return abs(v) < LIMIT ? v : LIMIT * signum(v);
 	}
 
 	private static double constrain(final double bot, final double val, final double top) {
@@ -188,24 +191,25 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		return isAtHeading;
 	}
 
+	public CANSparkMax getMotor(final Side side) {
+		return m_motors.get(side.idx);
+	}
+
+	public double getInchesPerSecond(final Side side) {
+//		final var rps = getMotor(side).getEncoder().getVelocity() / 60.0;
+		return getMotor(side).getEncoder().getVelocity() * side.encoderMultiplier;
+	}
+
+	public double getInchesPosition(final Side side) {
+		return getMotor(side).getEncoder().getPosition() * side.encoderMultiplier;
+	}
+
 	public void stopMotors() {
 		m_motors.forEach(CANSparkMax::stopMotor);
 	}
 
 	public List<CANSparkMax> getMotors() {
 		return m_motors;
-	}
-
-	public CANSparkMax getMotor(final Side side) {
-		return m_motors.get(side.idx);
-	}
-
-	public double getInchesPerSecond(final Side side) {
-		return getMotor(side).getEncoder().getVelocity() * side.encoderMultiplier;
-	}
-
-	public double getInchesPosition(final Side side) {
-		return getMotor(side).getEncoder().getPosition() * side.encoderMultiplier;
 	}
 
 	public Specifications getLocals() {
@@ -216,8 +220,8 @@ public final class DifferentialDrive extends Subsystem implements Sendable {
 		return m_transmission;
 	}
 
-	public MyAHRS getAHRS() {
-		return m_ahrs;
+	public Rotation2d getRotation() {
+		return Rotation2d.fromDegrees(-m_ahrs.getAngle());
 	}
 
 	public OpenLoopDriveCommand getDriveCommand() {

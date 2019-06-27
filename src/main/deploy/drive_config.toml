@@ -5,7 +5,7 @@ front_right = 3
 back_right = 4
 
 [specifications]
-encoderFactor = 1.411
+encoderFactor = 0.02351666666666666666666666666667
 quickstopThreshold = 0.2
 turnSensitivity = 1.0
 alpha = 0.1
@@ -13,7 +13,7 @@ kP_Rotational = 0.005
 kFF_Rotational = 0.1
 
 [specifications.pidDrive]
-kP = 1.0
+kP = 2e-2
 kI = 0.0
 kD = 0.0
 kF = 0.0

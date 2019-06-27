@@ -2,6 +2,7 @@ package org.usfirst.frc.team3310.utility.control;
 
 import com.gemsrobotics.Hardware;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
+import com.gemsrobotics.subsystems.drive.DifferentialDrive.Side;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
 import org.usfirst.frc.team3310.utility.math.Rotation2d;
@@ -33,24 +34,23 @@ public class RobotStateEstimator extends Command {
 
     @Override
     public void initialize() {
-        left_encoder_prev_distance_ = drive_.getInchesPosition(DifferentialDrive.Side.LEFT);
-        right_encoder_prev_distance_ = drive_.getInchesPosition(DifferentialDrive.Side.RIGHT);
+        left_encoder_prev_distance_ = drive_.getInchesPosition(Side.LEFT);
+        right_encoder_prev_distance_ = drive_.getInchesPosition(Side.RIGHT);
     }
 
     @Override
     public void execute() {
-        final double left_distance = drive_.getInchesPosition(DifferentialDrive.Side.LEFT);
-        final double right_distance = drive_.getInchesPerSecond(DifferentialDrive.Side.RIGHT);
-        final Rotation2d gyro_angle = Rotation2d.fromDegrees(-drive_.getAHRS().getAngle());
+        final double left_distance = drive_.getInchesPosition(Side.LEFT);
+        final double right_distance = drive_.getInchesPosition(Side.RIGHT);
+
         final Twist2d odometry_velocity = robot_state_.generateOdometryFromSensors(
                 left_distance - left_encoder_prev_distance_,
-                right_distance - right_encoder_prev_distance_, gyro_angle
-        );
+                right_distance - right_encoder_prev_distance_,
+                drive_.getRotation());
 
         final Twist2d predicted_velocity = Kinematics.forwardKinematics(
-                drive_.getInchesPerSecond(DifferentialDrive.Side.LEFT),
-                drive_.getInchesPerSecond(DifferentialDrive.Side.RIGHT)
-        );
+                drive_.getInchesPerSecond(Side.LEFT),
+                drive_.getInchesPerSecond(Side.RIGHT));
 
         robot_state_.addObservations(Timer.getFPGATimestamp(), odometry_velocity, predicted_velocity);
 

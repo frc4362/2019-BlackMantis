@@ -1,18 +1,19 @@
 package com.gemsrobotics.commands;
 
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-import edu.wpi.first.wpilibj.GenericHID;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
 
 public class ClimberRollerListener extends Command {
-	private WPI_TalonSRX m_rollers;
+	private TalonSRX m_rollers;
 	private XboxController m_controller;
 
 	private boolean m_hasRun;
 
 	public ClimberRollerListener(
-			final WPI_TalonSRX rollers,
+			final TalonSRX rollers,
 			final XboxController controller
 	) {
 		m_hasRun = false;
@@ -32,7 +33,7 @@ public class ClimberRollerListener extends Command {
 
 	@Override
 	public void execute() {
-		m_rollers.set(deadband(m_controller.getY(GenericHID.Hand.kLeft)));
+		m_rollers.set(ControlMode.PercentOutput, deadband(m_controller.getY(Hand.kLeft)));
 	}
 
 	@Override

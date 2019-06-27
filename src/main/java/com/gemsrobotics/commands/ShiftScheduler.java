@@ -1,18 +1,16 @@
 package com.gemsrobotics.commands;
 
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-import com.gemsrobotics.Hardware;
 import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.util.DualTransmission;
 import com.gemsrobotics.util.command.ToggleableCommand;
-import edu.wpi.first.wpilibj.DriverStation;
 
 import static com.gemsrobotics.util.DualTransmission.Gear.LOW;
 import static com.gemsrobotics.util.DualTransmission.Gear.HIGH;
 import static java.lang.Math.abs;
 
+// TODO re-tune this
 public class ShiftScheduler extends ToggleableCommand {
-	private static final double PEAK_RPM = 5400;
+	private static final double PEAK_RPM = 7500;
 
 	private final DifferentialDrive m_driveTrain;
 	private final DualTransmission m_transmission;

@@ -81,8 +81,8 @@ public class RobotState {
     }
 
     public synchronized RigidTransform2d getPredictedFieldToVehicle(final double lookahead_time) {
-        return getLatestFieldToVehicle().getValue()
-                .transformBy(RigidTransform2d.exp(vehicle_velocity_predicted_.scaled(lookahead_time)));
+        return getLatestFieldToVehicle().getValue().transformBy(
+                RigidTransform2d.exp(vehicle_velocity_predicted_.scaled(lookahead_time)));
     }
 
     public synchronized void addFieldToVehicleObservation(final double timestamp, final RigidTransform2d observation) {
@@ -94,7 +94,8 @@ public class RobotState {
             final Twist2d measured_velocity,
             final Twist2d predicted_velocity
     ) {
-        addFieldToVehicleObservation(timestamp, Kinematics.solveForwardKinematics(getLatestFieldToVehicle().getValue(), measured_velocity));
+        final var current_pose = getLatestFieldToVehicle().getValue();
+        addFieldToVehicleObservation(timestamp, Kinematics.solveForwardKinematics(current_pose, measured_velocity));
         vehicle_velocity_measured_ = measured_velocity;
         vehicle_velocity_predicted_ = predicted_velocity;
     }
@@ -105,8 +106,11 @@ public class RobotState {
             final Rotation2d current_gyro_angle
     ) {
         final RigidTransform2d last_measurement = getLatestFieldToVehicle().getValue();
-        final Twist2d delta = Kinematics.forwardKinematics(last_measurement.getRotation(),
-                left_encoder_delta_distance, right_encoder_delta_distance, current_gyro_angle);
+        final Twist2d delta = Kinematics.forwardKinematics(
+                last_measurement.getRotation(),
+                left_encoder_delta_distance,
+                right_encoder_delta_distance,
+                current_gyro_angle);
 
         distance_driven_ += delta.dx;
 

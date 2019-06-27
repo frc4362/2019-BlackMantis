@@ -2,15 +2,17 @@ package com.gemsrobotics.subsystems.adjuster;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.gemsrobotics.util.PIDF;
+import com.gemsrobotics.util.drivers.LazyTalonSRX;
 
 import static java.lang.Math.*;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class LateralAdjuster {
 	public final double kLatVolts;
-	private final WPI_TalonSRX m_motor;
+	private final TalonSRX m_motor;
 	private final double m_widthTicks, m_widthInches, m_radiansToEnd;
 
 	private boolean m_isDisabled;
@@ -19,7 +21,7 @@ public class LateralAdjuster {
 		kLatVolts = cfg.nominalVolts;
 		m_radiansToEnd = cfg.adjustmentThresholdRadians;
 
-		m_motor = new WPI_TalonSRX(cfg.port);
+		m_motor = new LazyTalonSRX(cfg.port);
 
 		final PIDF pids = cfg.pidVars;
 		m_motor.config_kP(0, pids.kP,0);
@@ -57,7 +59,7 @@ public class LateralAdjuster {
 	}
 
 	public void drive(final double speed) {
-		m_motor.set(speed);
+		m_motor.set(ControlMode.PercentOutput, speed);
 	}
 
 	public void stop() {
@@ -68,7 +70,7 @@ public class LateralAdjuster {
 		setPercent((radiansFromCenter / m_radiansToEnd + 1) / 2);
 	}
 
-	public WPI_TalonSRX getMotor() {
+	public TalonSRX getMotor() {
 		return m_motor;
 	}
 

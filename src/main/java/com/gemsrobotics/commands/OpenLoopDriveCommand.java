@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import org.usfirst.frc.team3310.utility.control.Kinematics;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -32,7 +33,7 @@ public class OpenLoopDriveCommand extends Command {
 	private final DriveCommandConfig m_cfg;
 	private final XboxController m_controller;
 
-	private Queue<DifferentialDrive.DrivePower> m_driveQueue;
+	private Queue<Kinematics.DriveVelocity> m_driveQueue;
 
 	private boolean m_isApproachingLast;
 
@@ -64,7 +65,7 @@ public class OpenLoopDriveCommand extends Command {
 		return m_limelight.getArea() > SLOWDOWN_PERCENT;
 	}
 
-	public void queue(final Collection<DifferentialDrive.DrivePower> velocities) {
+	public void queue(final Collection<Kinematics.DriveVelocity> velocities) {
 		m_driveQueue.addAll(velocities);
 	}
 
@@ -81,7 +82,7 @@ public class OpenLoopDriveCommand extends Command {
 
 		if (!m_driveQueue.isEmpty()) {
 			final var s = m_driveQueue.poll();
-			m_chassis.drive(s);
+			m_chassis.drive(s.left, s.right);
 		} else {
 			double linearPower = m_stick.get(Lens.Y);
 			final boolean isApproaching = isAttemptingVision() && m_limelight.isTargetPresent();

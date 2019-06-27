@@ -13,8 +13,4 @@ public class PIDF {
 		controller.setFF(kF, port);
 		controller.setIZone(kIZ, port);
 	}
-
-	public void configure(final CANPIDController controller) {
-		configure(controller, 0);
-	}
 }

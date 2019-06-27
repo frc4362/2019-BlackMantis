@@ -2,7 +2,9 @@ package com.gemsrobotics;
 
 import com.gemsrobotics.commands.*;
 import com.gemsrobotics.commands.auton.AutonomousCommandGroup;
-import com.gemsrobotics.commands.auton.DriveForwardCurvePath;
+import com.gemsrobotics.commands.auton.DriveForwardTestPath;
+import com.gemsrobotics.subsystems.LEDController;
+import com.gemsrobotics.subsystems.drive.DifferentialDrive;
 import com.gemsrobotics.util.DualTransmission.Gear;
 import com.gemsrobotics.util.camera.Limelight.LEDMode;
 import com.gemsrobotics.util.camera.Limelight.CameraMode;
@@ -10,11 +12,13 @@ import com.gemsrobotics.util.command.Commands;
 import com.gemsrobotics.util.command.loggers.LimelightLogger;
 import com.revrobotics.CANSparkMax.IdleMode;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import org.usfirst.frc.team3310.robot.commands.DriveResetPoseFromPath;
 import org.usfirst.frc.team3310.utility.control.RobotState;
 import org.usfirst.frc.team3310.utility.control.RobotStateEstimator;
 
@@ -26,13 +30,14 @@ public class Robot extends TimedRobot {
 	private SendableChooser<Command> m_autonSelector;
 
 	private Command m_selectedAuton;
-	private boolean m_hasAutonFinished, m_isFieldMatch;
+	private boolean m_hasAutonFinished, m_isFieldMatch, m_runCompressorLast;
 
 	@Override
 	public void robotInit() {
 		m_isFieldMatch = false;
-		m_oi = new OperatorInterface(0, 1, 2);
+		m_runCompressorLast = false;
 
+		m_oi = new OperatorInterface(0, 1, 2);
 		m_hardware = Hardware.getInstance();
 
 		m_compressorToggler = new SendableChooser<>() {{
@@ -48,7 +53,9 @@ public class Robot extends TimedRobot {
 		m_autonSelector = new SendableChooser<>() {{
 			setDefaultOption("NONE", Commands.nullCommand());
 			addOption("test auton", new AutonomousCommandGroup(m_oi) {{
-				addSequential(new DrivePathAdaptivePurePursuitCommand(new DriveForwardCurvePath()));
+				final var path = new DriveForwardTestPath();
+				addSequential(new DriveResetPoseFromPath(path, false));
+				addSequential(new DrivePathAdaptivePurePursuitCommand(path));
 			}});
 		}};
 
@@ -78,7 +85,12 @@ public class Robot extends TimedRobot {
 	public void robotPeriodic() {
 		m_ledController.writePeriodicOutputs();
 
-		m_hardware.getCompressor().setClosedLoopControl(m_compressorToggler.getSelected());
+		final boolean runCompressor = m_compressorToggler.getSelected();
+
+		if (m_runCompressorLast != runCompressor) {
+			m_hardware.getCompressor().setClosedLoopControl(runCompressor);
+			m_runCompressorLast = runCompressor;
+		}
 
 		SmartDashboard.putBoolean("HIGH GEAR", m_hardware.getChassis().getTransmission().get() == Gear.HIGH);
 		SmartDashboard.putBoolean("hand closed", m_hardware.getManipulator().getHand().get());
@@ -86,6 +98,13 @@ public class Robot extends TimedRobot {
 
 		final var currentPosition = RobotState.getInstance().getLatestFieldToVehicle().getValue();
 		SmartDashboard.putString("Robot State", currentPosition.toString());
+		SmartDashboard.putNumber("Distance driven", RobotState.getInstance().getDistanceDriven());
+
+		SmartDashboard.putNumber("Left Speed Inches per Second", m_hardware.getChassis().getInchesPerSecond(DifferentialDrive.Side.LEFT));
+		SmartDashboard.putNumber("Right Speed Inches per Second", m_hardware.getChassis().getInchesPerSecond(DifferentialDrive.Side.RIGHT));
+
+		SmartDashboard.putNumber("Left pos", m_hardware.getChassis().getInchesPosition(DifferentialDrive.Side.LEFT));
+		SmartDashboard.putNumber("Right pos", m_hardware.getChassis().getInchesPosition(DifferentialDrive.Side.RIGHT));
 	}
 
 	private void initOpMode() {
@@ -95,7 +114,7 @@ public class Robot extends TimedRobot {
 
 		m_hardware.getPTO().disengage();
 		m_hardware.getBackLegs().set(DoubleSolenoid.Value.kForward);
-		m_hardware.getStage1Solenoid().set(false);
+		m_hardware.getCargoIntake().set(false);
 
 		final var limelight = m_hardware.getLimelight();
 		limelight.setLEDMode(LEDMode.ON);
@@ -159,11 +178,50 @@ public class Robot extends TimedRobot {
 		initOpMode();
 		initDriverControl();
 		m_hardware.getLimelight().setLEDMode(LEDMode.ON);
-		Scheduler.getInstance().add(m_hardware.getChassis().getShiftScheduler());
+
+//		Scheduler.getInstance().add(m_hardware.getChassis().getShiftScheduler());
 	}
+
+//	double kP, kI, kD, kF, oldSetpoint;
 
 	@Override
 	public void teleopPeriodic() {
+//		final var prefs = Preferences.getInstance();
+//
+//		final double p = prefs.getDouble("p", 0);
+//		final double i = prefs.getDouble("i", 0);
+//		final double d = prefs.getDouble("d", 0);
+//		final double f = prefs.getDouble("f", 0);
+//
+//		final double setpointInches = Preferences.getInstance().getDouble("set_speed", 0);
+//
+//		final var motors = m_hardware.getChassis().getMotors();
+//
+//		if (p != kP) {
+//			kP = p;
+//			motors.forEach(motor -> motor.getPIDController().setP(kP));
+//		}
+//
+//		if (i != kI) {
+//			kI = i;
+//			motors.forEach(motor -> motor.getPIDController().setI(kI));
+//		}
+//
+//		if (d != kD) {
+//			kD = d;
+//			motors.forEach(motor -> motor.getPIDController().setD(kD));
+//		}
+//
+//		if (f != kF) {
+//			kF = f;
+//			motors.forEach(motor -> motor.getPIDController().setFF(kF));
+//		}
+//
+//		if (setpointInches != oldSetpoint) {
+//			oldSetpoint = setpointInches;
+//			m_hardware.getChassis().setVelocityReferences(setpointInches, setpointInches);
+//		}
+
 		Scheduler.getInstance().run();
 	}
 

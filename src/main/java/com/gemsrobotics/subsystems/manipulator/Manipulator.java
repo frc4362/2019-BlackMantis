@@ -1,6 +1,9 @@
 package com.gemsrobotics.subsystems.manipulator;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.gemsrobotics.util.drivers.LazyTalonSRX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -12,7 +15,7 @@ public class Manipulator {
 			CANSparkMaxLowLevel.ConfigParameter.kSensorType;
 	private static final int NO_SENSOR_SETTING_ID = 0;
 
-	private final WPI_TalonSRX m_stage1;
+	private final TalonSRX m_stage1;
 	private final CANSparkMax m_stage2Master, m_stage2Slave;
 	private final Solenoid m_arm, m_hand;
 
@@ -28,7 +31,7 @@ public class Manipulator {
 		m_stage2Slave.follow(m_stage2Master, true);
 		disableEncoder(m_stage2Slave);
 
-		m_stage1 = new WPI_TalonSRX(config.stage1Port);
+		m_stage1 = new LazyTalonSRX(config.stage1Port);
 
 		m_arm = new Solenoid(config.placementPort);
 		m_hand = new Solenoid(config.longPlacePort);
@@ -61,7 +64,7 @@ public class Manipulator {
 	}
 
 	private void setSpeed(final double speed2, final double speed1) {
-		m_stage1.set(speed1);
+		m_stage1.set(ControlMode.PercentOutput, speed1);
 		m_stage2Master.set(speed2);
 	}
 

@@ -1,10 +1,10 @@
 package com.gemsrobotics.util;
 
-        import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Solenoid;
 
 public class DualTransmission {
     public enum Gear {
-        LOW(6.73, 22.08 * 12), HIGH(13.85, 10.73 * 12);
+        LOW(6.73, 120), HIGH(13.85, 0);
 
         public final double ratio, topSpeed;
 

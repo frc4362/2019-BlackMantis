@@ -39,6 +39,34 @@ public class PathFollower {
         public double lookahead_point_x;
         public double lookahead_point_y;
         public double lookahead_point_velocity;
+
+        @Override
+        public String toString() {
+            final StringBuilder str = new StringBuilder();
+
+            str.append("\"" + t + "\",");
+            str.append("\"" + pose_x + "\",");
+            str.append("\"" + pose_y + "\",");
+            str.append("\"" + pose_theta + "\",");
+            str.append("\"" + linear_displacement + "\",");
+            str.append("\"" + linear_velocity + "\",");
+            str.append("\"" + profile_displacement + "\",");
+            str.append("\"" + profile_velocity + "\",");
+            str.append("\"" + velocity_command_dx + "\",");
+            str.append("\"" + velocity_command_dy + "\",");
+            str.append("\"" + velocity_command_dtheta + "\",");
+            str.append("\"" + steering_command_dx + "\",");
+            str.append("\"" + steering_command_dy + "\",");
+            str.append("\"" + steering_command_dtheta + "\",");
+            str.append("\"" + cross_track_error + "\",");
+            str.append("\"" + along_track_error + "\",");
+            str.append("\"" + lookahead_point_x + "\",");
+            str.append("\"" + lookahead_point_y + "\",");
+            str.append("\"" + lookahead_point_velocity + "\",");
+            str.append("\n");
+
+            return str.toString();
+        }
     }
 
     public static class Parameters {

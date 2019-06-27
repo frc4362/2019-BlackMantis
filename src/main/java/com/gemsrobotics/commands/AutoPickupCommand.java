@@ -10,14 +10,15 @@ import edu.wpi.first.wpilibj.command.Command;
 
 import com.gemsrobotics.subsystems.manipulator.Manipulator;
 import edu.wpi.first.wpilibj.command.Scheduler;
+import org.usfirst.frc.team3310.utility.control.Kinematics;
 
 import java.util.Collections;
 
 import static com.gemsrobotics.util.command.Commands.*;
 
 public class AutoPickupCommand extends Command {
-	private static final DifferentialDrive.DrivePower BACKWARDS_VELOCITY =
-			DifferentialDrive.driveVelocity(-1, 0.0);
+	private static final Kinematics.DriveVelocity BACKWARDS_VELOCITY =
+			new Kinematics.DriveVelocity(-1, -1);
 	private static final int BACKUP_TICKS = 20;
 
 	private final Manipulator m_manipulator;

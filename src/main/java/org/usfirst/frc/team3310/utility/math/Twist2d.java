@@ -1,5 +1,7 @@
 package org.usfirst.frc.team3310.utility.math;
 
+import java.text.DecimalFormat;
+
 /**
  * A movement along an arc at constant curvature and velocity. We can use ideas from "differential calculus" to create
  * new RigidTransform2d's from a Twist2d and visa versa.
@@ -9,7 +11,7 @@ package org.usfirst.frc.team3310.utility.math;
 public class Twist2d {
     protected static final Twist2d kIdentity = new Twist2d(0.0, 0.0, 0.0);
 
-    public static final Twist2d identity() {
+    public static Twist2d identity() {
         return kIdentity;
     }
 
@@ -25,5 +27,11 @@ public class Twist2d {
 
     public Twist2d scaled(double scale) {
         return new Twist2d(dx * scale, dy * scale, dtheta * scale);
+    }
+
+    @Override
+    public String toString() {
+        final DecimalFormat dcf = new DecimalFormat("#0.00");
+        return String.format("Twist2d[x: %f, y: %f, theta: %f]", dx, dy, dtheta);
     }
 }

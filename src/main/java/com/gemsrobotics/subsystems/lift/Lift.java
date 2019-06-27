@@ -65,7 +65,7 @@ public class Lift implements Sendable {
 		m_motorSlave = new CANSparkMax(m_liftConfig.portSlave, MotorType.kBrushless);
 
 		Arrays.asList(m_motorMaster, m_motorSlave).forEach(motor -> {
-			m_liftConfig.pidVars.configure(motor.getPIDController());
+			m_liftConfig.pidVars.configure(motor.getPIDController(), 0);
 			motor.getPIDController().setOutputRange(-1.0, 1.0);
 		});
 
